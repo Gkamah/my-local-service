@@ -22,7 +22,6 @@ mongoose.connect(process.env.DATABASE_URL)
 // === 3. MIDDLEWARE & VIEW ENGINE SETUP ===
 app.set('view engine', 'ejs'); 
 app.set('views', path.join(__dirname, 'views'));
-// Serve static files (CSS/JS/Images from the 'public' folder)
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.json());
@@ -43,7 +42,9 @@ app.use(session({
 app.use((req, res, next) => {
     res.locals.isLoggedIn = !!req.session.userId;
     res.locals.error = req.session.error; // Pass error message
-    delete req.session.error; // Clear error after displaying
+    res.locals.message = req.session.message; // Pass success/info message
+    delete req.session.error; 
+    delete req.session.message;
     next();
 });
 
@@ -69,16 +70,12 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    // 🛑 CAPTURE BOTH 'category' (dropdown value) AND 'newCategory' (text input)
     const { email, password, name, category, contactInfo, newCategory } = req.body;
     
-    // LOGIC TO DETERMINE FINAL CATEGORY
     let finalCategory = category;
     if (category === 'other' && newCategory && newCategory.trim().length > 0) {
-        // Use the new input value if 'other' was selected
         finalCategory = newCategory.trim().charAt(0).toUpperCase() + newCategory.trim().slice(1).toLowerCase();
     } else if (category === 'other' && (!newCategory || newCategory.trim().length === 0)) {
-        // Simple validation check if 'other' was selected but field was left blank
          return res.render('register', { error: 'Please specify the new category.', title: 'Register' });
     }
 
@@ -89,7 +86,7 @@ app.post('/register', async (req, res) => {
             email,
             password: hashedPassword,
             name,
-            category: finalCategory, // Use the determined category
+            category: finalCategory,
             contactInfo,
             role: 'provider',
             isSubscribed: false,
@@ -117,6 +114,7 @@ app.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email });
 
+        // CRITICAL: Check if user exists AND if password matches the hash
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
@@ -146,10 +144,7 @@ app.get('/logout', (req, res) => {
 app.get('/provider/profile', isLoggedIn, async (req, res) => {
     try {
         const provider = await User.findById(req.session.userId);
-        if (!provider) {
-            return res.redirect('/login');
-        }
-
+        // ... (profile loading logic remains the same)
         const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
         const trialEndDate = new Date(provider.trialStartDate.getTime() + ONE_WEEK_MS);
         const now = new Date();
@@ -173,7 +168,7 @@ app.get('/provider/profile', isLoggedIn, async (req, res) => {
 });
 
 
-// 5.6 SUBSCRIPTION ROUTE (M-Pesa Integration Point)
+// 5.6 SUBSCRIPTION ROUTE 
 app.get('/subscribe', isLoggedIn, (req, res) => {
     res.render('subscribe', { title: 'Subscribe & Pay' });
 });
@@ -182,16 +177,14 @@ app.get('/subscribe', isLoggedIn, (req, res) => {
 // 5.7 SEARCH ROUTES
 app.get('/search', async (req, res) => {
     const { q, category } = req.query;
-    let query = { isSubscribed: true }; // ONLY search subscribed users
+    let query = { isSubscribed: true }; 
 
-    // Add filtering by category if provided
     if (category && category !== 'All Categories') {
         query.category = category;
     }
     
-    // Add keyword search logic here (optional)
     if (q) {
-        const searchRegex = new RegExp(q, 'i'); // Case-insensitive search
+        const searchRegex = new RegExp(q, 'i');
         query.$or = [
             { name: searchRegex },
             { category: searchRegex },
@@ -216,6 +209,38 @@ app.get('/search', async (req, res) => {
             category: category || '', 
             error: 'Failed to perform search.' 
         });
+    }
+});
+
+// 5.8 FORGOT PASSWORD - Form
+app.get('/forgot-password', (req, res) => {
+    res.render('forgot-password', { title: 'Forgot Password', error: null, message: null });
+});
+
+// 5.9 FORGOT PASSWORD - Process (Placeholder for sending email/token)
+app.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    
+    try {
+        const user = await User.findOne({ email });
+        
+        if (!user) {
+            // Use req.session.message for clean, redirect-friendly messages
+            req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
+            return res.redirect('/forgot-password');
+        }
+        
+        // --- REAL-WORLD: Generate Token, Save to DB, Send Email ---
+        
+        // --- PLACEHOLDER RESPONSE ---
+        console.log(`[PASSWORD RESET] Token link GENERATED for: ${email}`);
+        req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
+        return res.redirect('/forgot-password');
+
+    } catch (error) {
+        console.error('Forgot Password Error:', error);
+        req.session.error = 'An internal error occurred during the request.';
+        return res.redirect('/forgot-password');
     }
 });
 
