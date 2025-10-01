@@ -1,0 +1,103 @@
+/* public/css/style.css */
+
+/* === 1. Simple Reset (Eliminates Browser Defaults) === */
+*,
+*::before,
+*::after {
+    /* Resets box model to include padding and border in element's total width and height */
+    box-sizing: border-box; 
+    /* Removes default margins and padding from all elements */
+    margin: 0;
+    padding: 0;
+}
+
+/* Base styles for HTML and Body */
+html {
+    /* Sets the root font size, often for easier responsive typography */
+    font-size: 100%; 
+    /* Smooth scrolling for anchor links */
+    scroll-behavior: smooth;
+}
+
+body {
+    /* Default font stack for accessibility and web safety */
+    font-family: Arial, Helvetica, sans-serif;
+    line-height: 1.6;
+    /* Basic background color */
+    background-color: #f4f4f9; 
+    /* Default text color */
+    color: #333;
+    min-height: 100vh; /* Ensures body takes full viewport height */
+}
+
+/* === 2. Typography and Heading Styles === */
+
+/* Remove default margin from headings and lists */
+h1, h2, h3, h4, h5, h6, p, ul, ol {
+    margin-bottom: 1rem;
+}
+
+h1 {
+    font-size: 2.5rem;
+    color: #1a1a40; /* Primary color for main headings */
+}
+
+h2 {
+    font-size: 2rem;
+    color: #3a3a60;
+}
+
+/* === 3. Anchor (Link) Styles === */
+a {
+    /* Removes the default underline */
+    text-decoration: none; 
+    color: #007bff; /* Standard link color (blue) */
+    transition: color 0.3s ease; /* Smooth color transition on hover */
+}
+
+a:hover {
+    color: #0056b3; /* Darker blue on hover */
+    text-decoration: underline;
+}
+
+/* === 4. Form/Button Styles (Basic) === */
+button,
+input[type="submit"] {
+    display: inline-block;
+    padding: 0.75rem 1.5rem;
+    font-size: 1rem;
+    cursor: pointer;
+    background-color: #007bff;
+    color: white;
+    border: none;
+    border-radius: 5px;
+    transition: background-color 0.3s;
+}
+
+button:hover,
+input[type="submit"]:hover {
+    background-color: #0056b3;
+}
+
+input[type="text"],
+input[type="email"],
+input[type="password"],
+select {
+    width: 100%; /* Makes form fields take up full width of container */
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid #ccc;
+    border-radius: 4px;
+}
+
+/* === 5. Layout Containers (Optional but Recommended) === */
+.container {
+    max-width: 1200px;
+    margin: 0 auto; /* Centers the container */
+    padding: 0 1rem; /* Padding on the sides for smaller screens */
+}
+
+/* General component styling for readability */
+main {
+    padding: 2rem 0;
+}
