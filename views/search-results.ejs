@@ -1,0 +1,24 @@
+<%- include('partials/head', { title: 'Search Results' }) %>
+
+<div class="search-results-page">
+    <h2>Search Results</h2>
+
+    <% if (providers && providers.length > 0) { %>
+        <p>Found <%= providers.length %> provider(s).</p>
+        <div class="provider-list">
+            <% providers.forEach(provider => { %>
+                <div class="provider-card">
+                    <h3><a href="/provider/<%= provider._id %>"><%= provider.name %></a></h3>
+                    <p>Category: <%= provider.category %></p>
+                    <p>Contact: <%= provider.contactInfo %></p>
+                </div>
+            <% }) %>
+        </div>
+    <% } else { %>
+        <div class="alert warning">
+            No service providers found matching your criteria, or the search returned no results.
+        </div>
+    <% } %>
+</div>
+
+<%- include('partials/footer') %>

@@ -2,26 +2,21 @@
 
 <div class="form-container">
     <h2>Register as a Service Provider</h2>
-    <% if (error) { %>
-        <p class="error-message"><%= error %></p>
-    <% } %>
     <form method="POST" action="/register">
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
-
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        
-        <label for="name">Business Name / Name:</label>
-        <input type="text" id="name" name="name" required>
-
         <label for="category">Service Category:</label>
-        <select id="category" name="category" required>
+        <select id="category" name="category" required onchange="checkCategory(this)">
+            <option value="">-- Select or Add New --</option>
             <option value="plumbing">Plumbing</option>
             <option value="electrician">Electrician</option>
             <option value="gardening">Gardening</option>
             <option value="cleaning">Cleaning</option>
+            <option value="other">Other (Specify Below)</option>
         </select>
+        
+        <div id="newCategoryContainer" style="display:none; margin-top: 10px;">
+            <label for="newCategory">Enter New Category Name:</label>
+            <input type="text" id="newCategory" name="newCategory" placeholder="e.g., Drone Photography">
+        </div>
         
         <label for="contactInfo">Contact Phone/WhatsApp (Public):</label>
         <input type="text" id="contactInfo" name="contactInfo" required>
@@ -30,5 +25,21 @@
     </form>
     <p>Already registered? <a href="/login">Log In</a></p>
 </div>
+
+<script>
+    function checkCategory(selectElement) {
+        const container = document.getElementById('newCategoryContainer');
+        const newCategoryInput = document.getElementById('newCategory');
+
+        if (selectElement.value === 'other') {
+            container.style.display = 'block';
+            newCategoryInput.setAttribute('required', 'required');
+        } else {
+            container.style.display = 'none';
+            newCategoryInput.removeAttribute('required');
+            newCategoryInput.value = ''; // Clear if they switch back
+        }
+    }
+</script>
 
 <%- include('partials/footer') %>

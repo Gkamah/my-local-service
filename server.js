@@ -5,7 +5,7 @@ const dotenv = require('dotenv');
 const session = require('express-session');
 const path = require('path');
 const bcrypt = require('bcrypt');
-const User = require('./models/User'); // Mongoose User Model
+const User = require('./models/User'); 
 
 // Load environment variables (MUST be the first thing!)
 dotenv.config();
@@ -22,6 +22,7 @@ mongoose.connect(process.env.DATABASE_URL)
 // === 3. MIDDLEWARE & VIEW ENGINE SETUP ===
 app.set('view engine', 'ejs'); 
 app.set('views', path.join(__dirname, 'views'));
+// Serve static files (CSS/JS/Images from the 'public' folder)
 app.use(express.static(path.join(__dirname, 'public')));
 
 app.use(express.json());
@@ -68,7 +69,19 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const { email, password, name, category, contactInfo } = req.body;
+    // 🛑 CAPTURE BOTH 'category' (dropdown value) AND 'newCategory' (text input)
+    const { email, password, name, category, contactInfo, newCategory } = req.body;
+    
+    // LOGIC TO DETERMINE FINAL CATEGORY
+    let finalCategory = category;
+    if (category === 'other' && newCategory && newCategory.trim().length > 0) {
+        // Use the new input value if 'other' was selected
+        finalCategory = newCategory.trim().charAt(0).toUpperCase() + newCategory.trim().slice(1).toLowerCase();
+    } else if (category === 'other' && (!newCategory || newCategory.trim().length === 0)) {
+        // Simple validation check if 'other' was selected but field was left blank
+         return res.render('register', { error: 'Please specify the new category.', title: 'Register' });
+    }
+
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
         
@@ -76,7 +89,7 @@ app.post('/register', async (req, res) => {
             email,
             password: hashedPassword,
             name,
-            category,
+            category: finalCategory, // Use the determined category
             contactInfo,
             role: 'provider',
             isSubscribed: false,
@@ -159,6 +172,7 @@ app.get('/provider/profile', isLoggedIn, async (req, res) => {
     }
 });
 
+
 // 5.6 SUBSCRIPTION ROUTE (M-Pesa Integration Point)
 app.get('/subscribe', isLoggedIn, (req, res) => {
     res.render('subscribe', { title: 'Subscribe & Pay' });
@@ -170,17 +184,38 @@ app.get('/search', async (req, res) => {
     const { q, category } = req.query;
     let query = { isSubscribed: true }; // ONLY search subscribed users
 
-    if (category) {
+    // Add filtering by category if provided
+    if (category && category !== 'All Categories') {
         query.category = category;
     }
-    // You would add keyword search logic here using regex on fields like 'name', 'category'
+    
+    // Add keyword search logic here (optional)
+    if (q) {
+        const searchRegex = new RegExp(q, 'i'); // Case-insensitive search
+        query.$or = [
+            { name: searchRegex },
+            { category: searchRegex },
+            { contactInfo: searchRegex }
+        ];
+    }
 
     try {
         const providers = await User.find(query);
-        res.render('search-results', { title: 'Search Results', providers, q, category });
+        res.render('search-results', { 
+            title: 'Search Results', 
+            providers, 
+            q: q || '', 
+            category: category || '' 
+        });
     } catch (error) {
         console.error('Search Error:', error);
-        res.render('search-results', { title: 'Search Results', providers: [], q, category, error: 'Failed to perform search.' });
+        res.render('search-results', { 
+            title: 'Search Results', 
+            providers: [], 
+            q: q || '', 
+            category: category || '', 
+            error: 'Failed to perform search.' 
+        });
     }
 });
 
