@@ -80,7 +80,7 @@ app.post('/register', async (req, res) => {
     }
 
     try {
-        // HASHING STEP
+        // HASHING STEP: Explicitly setting salt rounds to 10 for consistency
         const hashedPassword = await bcrypt.hash(password, 10);
         
         const newUser = new User({
@@ -120,7 +120,7 @@ app.post('/login', async (req, res) => {
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
         
-        // 🛑 THIS MUST BE AWAITED! Compares the plain password to the stored hash.
+        // AWAITED PASSWORD COMPARISON
         const passwordMatch = await bcrypt.compare(password, user.password);
 
         if (!passwordMatch) {

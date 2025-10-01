@@ -1,0 +1,92 @@
+<!-- views/provider/profile.ejs -->
+<%- include('../partials/head', { title: title }) %>
+
+<div class="container profile-container">
+    <div class="profile-header">
+        <h2><%= provider.name %>'s Service Profile</h2>
+        <a href="/logout" class="btn-secondary">Log Out</a>
+    </div>
+
+    <div class="profile-details">
+        <h3>Account Status</h3>
+        <% if (provider.isSubscribed) { %>
+            <div class="alert success">
+                <i class="fas fa-check-circle"></i> You are a **Full Subscriber**. Your profile is visible in search results!
+            </div>
+        <% } else if (isTrialActive) { %>
+            <div class="alert warning">
+                <i class="fas fa-hourglass-half"></i> **Trial Active**: **<%= daysLeft %> day(s) left**. Subscribe now to ensure your listing remains active!
+                <a href="/subscribe" class="btn-primary">Go to Subscription</a>
+            </div>
+        <% } else { %>
+            <div class="alert danger">
+                <i class="fas fa-exclamation-triangle"></i> **Trial Expired / Not Subscribed**. Your profile is currently hidden from search results.
+                <a href="/subscribe" class="btn-primary">Reactivate Subscription</a>
+            </div>
+        <% } %>
+        
+        <hr>
+
+        <h3>My Information</h3>
+        <div class="info-group">
+            <p><strong>Email:</strong> <%= provider.email %></p>
+            <p><strong>Service Category:</strong> <%= provider.category %></p>
+            <p><strong>Public Contact:</strong> <%= provider.contactInfo %></p>
+        </div>
+        
+        <div class="info-group">
+            <p><strong>Member Since:</strong> <%= provider.trialStartDate.toDateString() %></p>
+            <p><strong>MongoDB ID:</strong> <small><%= provider._id %></small></p>
+        </div>
+    </div>
+</div>
+
+<style>
+    /* Styling for the Profile Page - Responsive styles are in style.css */
+    .profile-container {
+        padding: 2rem;
+        background: #fff;
+        border-radius: 8px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        margin-top: 2rem;
+    }
+
+    .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 1rem;
+        margin-bottom: 1.5rem;
+    }
+
+    .profile-details {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .profile-details h3 {
+        color: #1a1a40;
+        margin-top: 1rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .info-group {
+        border: 1px solid #e0e0e0;
+        border-radius: 5px;
+        padding: 1rem;
+        background-color: #f9f9f9;
+    }
+    .info-group p {
+        margin-bottom: 0.4rem;
+    }
+
+    .btn-primary, .btn-secondary {
+        text-decoration: none;
+        padding: 0.5rem 1rem;
+        font-size: 0.9rem;
+    }
+</style>
+
+<%- include('../partials/footer') %>
