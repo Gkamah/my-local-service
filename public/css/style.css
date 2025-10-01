@@ -40,7 +40,7 @@ h1, h2, h3 {
     color: #1a1a40;
 }
 
-/* === 3. Navbar and Header === */
+/* === 3. Navbar and Header (Responsive) === */
 .navbar {
     background-color: #fff;
     padding: 1rem 1.5rem;
@@ -48,6 +48,7 @@ h1, h2, h3 {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    flex-wrap: wrap; /* Allows wrapping on small screens */
 }
 
 .navbar .logo {
@@ -56,11 +57,16 @@ h1, h2, h3 {
     color: var(--primary-color);
 }
 
+.navbar .nav-links {
+    display: flex;
+    gap: 15px;
+}
+
 .navbar .nav-links a {
-    margin-left: 15px;
     color: var(--text-dark);
     text-decoration: none;
     padding: 0.5rem 0;
+    white-space: nowrap;
 }
 
 .navbar .nav-links a:hover {
@@ -68,17 +74,38 @@ h1, h2, h3 {
     border-bottom: 2px solid var(--primary-color);
 }
 
-/* === 4. Hero Section & Search Form === */
+/* Mobile Navbar Adjustments */
+@media (max-width: 768px) {
+    .navbar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+    .navbar .logo {
+        margin-bottom: 10px;
+    }
+    .navbar .nav-links {
+        width: 100%;
+        justify-content: space-around;
+        gap: 0;
+    }
+    .navbar .nav-links a {
+        padding: 0.5rem 10px;
+        font-size: 0.9rem;
+    }
+}
+
+
+/* === 4. Hero Section & Search Form (Responsive) === */
 .hero-section {
     text-align: center;
-    padding: 4rem 0;
+    padding: 3rem 1rem; /* Reduced padding for mobile */
     background-color: #e9ecef;
     margin-bottom: 2rem;
     border-radius: 8px;
 }
 
 .hero-section h1 {
-    font-size: 3rem;
+    font-size: 2.5rem;
     margin-bottom: 0.5rem;
 }
 
@@ -87,6 +114,7 @@ h1, h2, h3 {
     justify-content: center;
     gap: 10px;
     margin-top: 1.5rem;
+    flex-wrap: wrap; /* Allows stacking on mobile */
 }
 
 .search-form input[type="text"],
@@ -94,10 +122,32 @@ h1, h2, h3 {
     padding: 0.75rem;
     border: 1px solid var(--border-color);
     border-radius: 4px;
-    width: 300px;
+    width: 300px; /* Default width */
 }
 
-/* === 5. Forms (Login/Register) === */
+.search-form button {
+    white-space: nowrap;
+}
+
+/* Mobile Search Form Adjustments */
+@media (max-width: 600px) {
+    .hero-section h1 {
+        font-size: 2rem;
+    }
+    .search-form {
+        flex-direction: column;
+        align-items: center;
+    }
+    .search-form input[type="text"],
+    .search-form select,
+    .search-form button {
+        width: 100%; /* Full width for better tapping */
+        max-width: 350px;
+    }
+}
+
+
+/* === 5. Forms (Login/Register/Forgot Password - Responsive) === */
 .form-container {
     max-width: 450px;
     margin: 3rem auto;
@@ -105,6 +155,14 @@ h1, h2, h3 {
     background: #fff;
     border-radius: 8px;
     box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+/* Mobile Form Adjustments */
+@media (max-width: 500px) {
+    .form-container {
+        margin: 1rem; /* Better margin on tiny screens */
+        padding: 1.5rem;
+    }
 }
 
 .form-container label {

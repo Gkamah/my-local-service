@@ -41,8 +41,8 @@ app.use(session({
 // Global locals for EJS templates
 app.use((req, res, next) => {
     res.locals.isLoggedIn = !!req.session.userId;
-    res.locals.error = req.session.error; // Pass error message
-    res.locals.message = req.session.message; // Pass success/info message
+    res.locals.error = req.session.error; 
+    res.locals.message = req.session.message; 
     delete req.session.error; 
     delete req.session.message;
     next();
@@ -114,11 +114,12 @@ app.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email });
 
-        // CRITICAL: Check if user exists AND if password matches the hash
+        // CRITICAL LOGIN LOGIC CHECK: Find user AND compare hash
         if (!user || !(await bcrypt.compare(password, user.password))) {
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
 
+        // Success: set session and redirect
         req.session.userId = user._id;
         res.redirect('/provider/profile'); 
 
@@ -144,7 +145,7 @@ app.get('/logout', (req, res) => {
 app.get('/provider/profile', isLoggedIn, async (req, res) => {
     try {
         const provider = await User.findById(req.session.userId);
-        // ... (profile loading logic remains the same)
+        
         const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
         const trialEndDate = new Date(provider.trialStartDate.getTime() + ONE_WEEK_MS);
         const now = new Date();
@@ -225,14 +226,12 @@ app.post('/forgot-password', async (req, res) => {
         const user = await User.findOne({ email });
         
         if (!user) {
-            // Use req.session.message for clean, redirect-friendly messages
             req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
             return res.redirect('/forgot-password');
         }
         
         // --- REAL-WORLD: Generate Token, Save to DB, Send Email ---
         
-        // --- PLACEHOLDER RESPONSE ---
         console.log(`[PASSWORD RESET] Token link GENERATED for: ${email}`);
         req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
         return res.redirect('/forgot-password');

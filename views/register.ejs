@@ -1,3 +1,4 @@
+<!-- views/register.ejs -->
 <%- include('partials/head', { title: 'Register' }) %>
 
 <div class="form-container">
@@ -27,6 +28,7 @@
             <option value="other">Other (Specify Below)</option>
         </select>
         
+        <!-- Conditional Input Field for New Category -->
         <div id="newCategoryContainer" style="display:none; margin-top: 10px;">
             <label for="newCategory">Enter New Category Name:</label>
             <input type="text" id="newCategory" name="newCategory" placeholder="e.g., Drone Photography">
@@ -50,17 +52,14 @@
 
         if (selectElement.value === 'other') {
             container.style.display = 'block';
-            // Set required attribute dynamically when 'other' is selected
             newCategoryInput.setAttribute('required', 'required');
         } else {
             container.style.display = 'none';
-            // Remove required attribute when switching back
             newCategoryInput.removeAttribute('required');
-            newCategoryInput.value = ''; // Clear input field
+            newCategoryInput.value = ''; 
         }
     }
 
-    // Run the check once on page load to handle browser autofill/back button scenarios
     document.addEventListener('DOMContentLoaded', () => {
         const categorySelect = document.getElementById('category');
         if (categorySelect) {
@@ -70,3 +69,14 @@
 </script>
 
 <%- include('partials/footer') %>
+```
+eof
+
+### Final Action:
+
+Please replace the content of your three files (`server.js`, `public/css/style.css`, and `views/login.ejs`), and then commit and push to GitHub:
+
+```bash
+git add .
+git commit -m "FIX: Login comparison issue and implement full site responsiveness"
+git push origin main
