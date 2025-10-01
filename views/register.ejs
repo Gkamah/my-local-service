@@ -2,7 +2,21 @@
 
 <div class="form-container">
     <h2>Register as a Service Provider</h2>
+    
+    <% if (error) { %>
+        <p class="error-message"><%= error %></p>
+    <% } %>
+    
     <form method="POST" action="/register">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        
+        <label for="name">Business Name / Name:</label>
+        <input type="text" id="name" name="name" required>
+
         <label for="category">Service Category:</label>
         <select id="category" name="category" required onchange="checkCategory(this)">
             <option value="">-- Select or Add New --</option>
@@ -27,19 +41,32 @@
 </div>
 
 <script>
+    /**
+     * Toggles the visibility of the new category text input based on the dropdown selection.
+     */
     function checkCategory(selectElement) {
         const container = document.getElementById('newCategoryContainer');
         const newCategoryInput = document.getElementById('newCategory');
 
         if (selectElement.value === 'other') {
             container.style.display = 'block';
+            // Set required attribute dynamically when 'other' is selected
             newCategoryInput.setAttribute('required', 'required');
         } else {
             container.style.display = 'none';
+            // Remove required attribute when switching back
             newCategoryInput.removeAttribute('required');
-            newCategoryInput.value = ''; // Clear if they switch back
+            newCategoryInput.value = ''; // Clear input field
         }
     }
+
+    // Run the check once on page load to handle browser autofill/back button scenarios
+    document.addEventListener('DOMContentLoaded', () => {
+        const categorySelect = document.getElementById('category');
+        if (categorySelect) {
+             checkCategory(categorySelect);
+        }
+    });
 </script>
 
 <%- include('partials/footer') %>
