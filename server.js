@@ -80,6 +80,7 @@ app.post('/register', async (req, res) => {
     }
 
     try {
+        // HASHING STEP
         const hashedPassword = await bcrypt.hash(password, 10);
         
         const newUser = new User({
@@ -114,8 +115,15 @@ app.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email });
 
-        // CRITICAL LOGIN LOGIC CHECK: Find user AND compare hash
-        if (!user || !(await bcrypt.compare(password, user.password))) {
+        // CRITICAL LOGIN LOGIC CHECK: 
+        if (!user) {
+            return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
+        }
+        
+        // 🛑 THIS MUST BE AWAITED! Compares the plain password to the stored hash.
+        const passwordMatch = await bcrypt.compare(password, user.password);
+
+        if (!passwordMatch) {
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
 
