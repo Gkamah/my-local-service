@@ -1,103 +1,195 @@
 /* public/css/style.css */
 
-/* === 1. Simple Reset (Eliminates Browser Defaults) === */
+/* === 1. Simple Reset === */
 *,
 *::before,
 *::after {
-    /* Resets box model to include padding and border in element's total width and height */
     box-sizing: border-box; 
-    /* Removes default margins and padding from all elements */
     margin: 0;
     padding: 0;
 }
 
-/* Base styles for HTML and Body */
-html {
-    /* Sets the root font size, often for easier responsive typography */
-    font-size: 100%; 
-    /* Smooth scrolling for anchor links */
-    scroll-behavior: smooth;
+/* === 2. Global Variables and Base Styles === */
+:root {
+    --primary-color: #007bff;
+    --secondary-color: #6c757d;
+    --success-color: #28a745;
+    --warning-color: #ffc107;
+    --danger-color: #dc3545;
+    --bg-light: #f4f4f9;
+    --text-dark: #333;
+    --border-color: #ccc;
 }
 
 body {
-    /* Default font stack for accessibility and web safety */
-    font-family: Arial, Helvetica, sans-serif;
+    font-family: Arial, sans-serif;
     line-height: 1.6;
-    /* Basic background color */
-    background-color: #f4f4f9; 
-    /* Default text color */
-    color: #333;
-    min-height: 100vh; /* Ensures body takes full viewport height */
+    background-color: var(--bg-light); 
+    color: var(--text-dark);
+    min-height: 100vh;
 }
 
-/* === 2. Typography and Heading Styles === */
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 1rem 1.5rem;
+}
 
-/* Remove default margin from headings and lists */
-h1, h2, h3, h4, h5, h6, p, ul, ol {
+h1, h2, h3 {
     margin-bottom: 1rem;
+    color: #1a1a40;
 }
 
-h1 {
-    font-size: 2.5rem;
-    color: #1a1a40; /* Primary color for main headings */
+/* === 3. Navbar and Header === */
+.navbar {
+    background-color: #fff;
+    padding: 1rem 1.5rem;
+    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
 }
 
-h2 {
-    font-size: 2rem;
-    color: #3a3a60;
+.navbar .logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
 }
 
-/* === 3. Anchor (Link) Styles === */
-a {
-    /* Removes the default underline */
-    text-decoration: none; 
-    color: #007bff; /* Standard link color (blue) */
-    transition: color 0.3s ease; /* Smooth color transition on hover */
+.navbar .nav-links a {
+    margin-left: 15px;
+    color: var(--text-dark);
+    text-decoration: none;
+    padding: 0.5rem 0;
 }
 
-a:hover {
-    color: #0056b3; /* Darker blue on hover */
-    text-decoration: underline;
+.navbar .nav-links a:hover {
+    color: var(--primary-color);
+    border-bottom: 2px solid var(--primary-color);
 }
 
-/* === 4. Form/Button Styles (Basic) === */
-button,
-input[type="submit"] {
+/* === 4. Hero Section & Search Form === */
+.hero-section {
+    text-align: center;
+    padding: 4rem 0;
+    background-color: #e9ecef;
+    margin-bottom: 2rem;
+    border-radius: 8px;
+}
+
+.hero-section h1 {
+    font-size: 3rem;
+    margin-bottom: 0.5rem;
+}
+
+.search-form {
+    display: flex;
+    justify-content: center;
+    gap: 10px;
+    margin-top: 1.5rem;
+}
+
+.search-form input[type="text"],
+.search-form select {
+    padding: 0.75rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+    width: 300px;
+}
+
+/* === 5. Forms (Login/Register) === */
+.form-container {
+    max-width: 450px;
+    margin: 3rem auto;
+    padding: 2rem;
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
+}
+
+.form-container label {
+    display: block;
+    margin-bottom: 0.5rem;
+    font-weight: bold;
+}
+
+.form-container input,
+.form-container select {
+    width: 100%;
+    padding: 0.75rem;
+    margin-bottom: 1rem;
+    border: 1px solid var(--border-color);
+    border-radius: 4px;
+}
+
+/* === 6. Buttons === */
+.btn-primary, .btn-secondary {
     display: inline-block;
     padding: 0.75rem 1.5rem;
     font-size: 1rem;
     cursor: pointer;
-    background-color: #007bff;
-    color: white;
     border: none;
     border-radius: 5px;
+    text-align: center;
     transition: background-color 0.3s;
 }
 
-button:hover,
-input[type="submit"]:hover {
+.btn-primary {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-primary:hover {
     background-color: #0056b3;
 }
 
-input[type="text"],
-input[type="email"],
-input[type="password"],
-select {
-    width: 100%; /* Makes form fields take up full width of container */
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    border: 1px solid #ccc;
+.btn-secondary {
+    background-color: var(--secondary-color);
+    color: white;
+    margin-top: 10px;
+}
+
+/* === 7. Messages & Alerts === */
+.error-message {
+    color: var(--danger-color);
+    padding: 0.5rem;
+    border: 1px solid var(--danger-color);
+    background-color: #f8d7da;
     border-radius: 4px;
+    margin-bottom: 1rem;
+    text-align: center;
 }
 
-/* === 5. Layout Containers (Optional but Recommended) === */
-.container {
-    max-width: 1200px;
-    margin: 0 auto; /* Centers the container */
-    padding: 0 1rem; /* Padding on the sides for smaller screens */
+.alert {
+    padding: 1rem;
+    border-radius: 5px;
+    margin-bottom: 1rem;
+    font-weight: bold;
 }
 
-/* General component styling for readability */
-main {
-    padding: 2rem 0;
+.alert.success {
+    background-color: #d4edda;
+    color: var(--success-color);
+    border-color: #c3e6cb;
+}
+
+.alert.warning {
+    background-color: #fff3cd;
+    color: #856404;
+    border-color: #ffeeba;
+}
+
+.alert.danger {
+    background-color: #f8d7da;
+    color: var(--danger-color);
+    border-color: #f5c6cb;
+}
+
+/* === 8. Footer === */
+footer {
+    text-align: center;
+    padding: 1rem 0;
+    margin-top: 2rem;
+    border-top: 1px solid var(--border-color);
+    color: var(--secondary-color);
 }

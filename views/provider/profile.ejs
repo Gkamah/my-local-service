@@ -1,0 +1,30 @@
+<%- include('../partials/head', { title: 'Dashboard' }) %>
+
+<div class="dashboard">
+    <h2>Welcome, <%= provider.name %>!</h2>
+    
+    <% if (provider.isSubscribed) { %>
+        <div class="alert success">
+            You are a **fully subscribed** provider. Your listing is visible in search results.
+        </div>
+    <% } else if (isTrialActive) { %>
+        <div class="alert warning">
+            **TRIAL ACTIVE:** You have **<%= daysLeft %>** day(s) left in your free 7-day trial. <a href="/subscribe">Subscribe now</a> to keep your listing active!
+        </div>
+    <% } else { %>
+        <div class="alert danger">
+            **SUBSCRIPTION REQUIRED:** Your trial has expired. Your listing is **not visible** in search results. Please <a href="/subscribe">subscribe now</a>.
+        </div>
+    <% } %>
+
+    <h3>Your Current Listing Details</h3>
+    <p><strong>Service Category:</strong> <%= provider.category %></p>
+    <p><strong>Contact Info:</strong> <%= provider.contactInfo %></p>
+    
+    <h4>Profile Picture & Sample Work</h4>
+    <p>*(Upload implementation needed here - requires Multer/Cloudinary)*</p>
+    
+    <button class="btn-secondary">Edit Profile</button>
+</div>
+
+<%- include('../partials/footer') %>

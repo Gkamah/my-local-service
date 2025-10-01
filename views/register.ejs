@@ -1,21 +1,34 @@
-<h1>Register as a Service Provider</h1>
-<form method="POST" action="/register">
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required>
+<%- include('partials/head', { title: 'Register' }) %>
 
-    <label for="password">Password:</label>
-    <input type="password" id="password" name="password" required>
-    
-    <label for="name">Business Name / Name:</label>
-    <input type="text" id="name" name="name" required>
+<div class="form-container">
+    <h2>Register as a Service Provider</h2>
+    <% if (error) { %>
+        <p class="error-message"><%= error %></p>
+    <% } %>
+    <form method="POST" action="/register">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
 
-    <label for="category">Service Category:</label>
-    <select id="category" name="category" required>
-        <option value="plumbing">Plumbing</option>
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        
+        <label for="name">Business Name / Name:</label>
+        <input type="text" id="name" name="name" required>
+
+        <label for="category">Service Category:</label>
+        <select id="category" name="category" required>
+            <option value="plumbing">Plumbing</option>
+            <option value="electrician">Electrician</option>
+            <option value="gardening">Gardening</option>
+            <option value="cleaning">Cleaning</option>
         </select>
-    
-    <label for="contactInfo">Contact Phone/WhatsApp:</label>
-    <input type="text" id="contactInfo" name="contactInfo" required>
+        
+        <label for="contactInfo">Contact Phone/WhatsApp (Public):</label>
+        <input type="text" id="contactInfo" name="contactInfo" required>
 
-    <button type="submit">Sign Up and Start Trial</button>
-</form>
+        <button type="submit" class="btn-primary">Sign Up and Start 7-Day Trial</button>
+    </form>
+    <p>Already registered? <a href="/login">Log In</a></p>
+</div>
+
+<%- include('partials/footer') %>

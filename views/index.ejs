@@ -1,13 +1,20 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <link rel="stylesheet" href="/css/style.css">
-    <title>My Local Service</title>
-</head>
-<body>
-    <h1>Success! Your server is running.</h1>
-    <p>Time to build the rest of your UI.</p>
-</body>
-</html>
+<%- include('partials/head', { title: 'Home' }) %>
+
+<div class="hero-section">
+    <h1>Find Local Service Providers Near You</h1>
+    <p>Securely connect with verified service providers in your area.</p>
+
+    <form action="/search" method="GET" class="search-form">
+        <input type="text" name="q" placeholder="E.g., Plumber, Electrician, Gardener" required>
+        <select name="category">
+            <option value="">All Categories</option>
+            <option value="plumbing">Plumbing</option>
+            <option value="electrician">Electrician</option>
+            <option value="gardening">Gardening</option>
+            <option value="cleaning">Cleaning</option>
+            </select>
+        <button type="submit" class="btn-primary">Search Services</button>
+    </form>
+</div>
+
+<%- include('partials/footer') %>

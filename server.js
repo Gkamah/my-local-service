@@ -4,10 +4,10 @@ const mongoose = require('mongoose');
 const dotenv = require('dotenv');
 const session = require('express-session');
 const path = require('path');
-const bcrypt = require('bcrypt'); // Required for password hashing
+const bcrypt = require('bcrypt');
 const User = require('./models/User'); // Mongoose User Model
 
-// Load environment variables (from .env locally, from Render remotely)
+// Load environment variables (MUST be the first thing!)
 dotenv.config();
 
 // === 1. INITIALIZE APP & PORT ===
@@ -20,42 +20,38 @@ mongoose.connect(process.env.DATABASE_URL)
     .catch(err => console.error('DB Connection Error:', err));
 
 // === 3. MIDDLEWARE & VIEW ENGINE SETUP ===
-// Set EJS as the view engine and specify the views directory
 app.set('view engine', 'ejs'); 
 app.set('views', path.join(__dirname, 'views'));
-
-// Serve static files (CSS/JS/Images from the 'public' folder)
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Body Parsers & Session Setup
-app.use(express.json()); // To parse JSON bodies
-app.use(express.urlencoded({ extended: true })); // To parse form submissions
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
 
 // Express Session Middleware
 app.use(session({
-    secret: process.env.SESSION_SECRET, // Crucial for security
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { 
-        // Use secure cookies in production (HTTPS)
         secure: process.env.NODE_ENV === 'production', 
         maxAge: 1000 * 60 * 60 * 24 // 24 hours
     } 
 }));
 
-// Global variable for checking login status in EJS templates
+// Global locals for EJS templates
 app.use((req, res, next) => {
     res.locals.isLoggedIn = !!req.session.userId;
+    res.locals.error = req.session.error; // Pass error message
+    delete req.session.error; // Clear error after displaying
     next();
 });
 
 // === 4. AUTH MIDDLEWARE === 
-// Protects routes that only logged-in users (providers) should access
 function isLoggedIn(req, res, next) {
     if (req.session.userId) {
         return next();
     }
-    // Redirect unauthenticated users to the login page
+    req.session.error = 'You must be logged in to access that page.';
     res.redirect('/login');
 }
 
@@ -63,22 +59,19 @@ function isLoggedIn(req, res, next) {
 
 // 5.1 HOME/LANDING PAGE
 app.get('/', (req, res) => {
-    // Renders the main landing page
     res.render('index', { title: 'Home' }); 
 });
 
 // 5.2 REGISTRATION ROUTES
 app.get('/register', (req, res) => {
-    res.render('register', { title: 'Register as Provider' });
+    res.render('register', { title: 'Register as Provider', error: null });
 });
 
 app.post('/register', async (req, res) => {
     const { email, password, name, category, contactInfo } = req.body;
     try {
-        // 1. Hash the password before saving
         const hashedPassword = await bcrypt.hash(password, 10);
         
-        // 2. Create the new user/provider
         const newUser = new User({
             email,
             password: hashedPassword,
@@ -86,26 +79,24 @@ app.post('/register', async (req, res) => {
             category,
             contactInfo,
             role: 'provider',
-            isSubscribed: false, // Start unverified/unsubscribed
-            trialStartDate: new Date() // Start the 7-day trial period
+            isSubscribed: false,
+            trialStartDate: new Date()
         });
 
         await newUser.save();
 
-        // 3. Automatically log in the user after registration
         req.session.userId = newUser._id;
         res.redirect('/provider/profile'); 
     } catch (error) {
         console.error('Registration Error:', error);
-        // Handle unique email constraint or other errors
-        res.render('register', { error: 'Registration failed. Email may already be in use.' });
+        res.render('register', { error: 'Registration failed. Email may already be in use.', title: 'Register' });
     }
 });
 
 
 // 5.3 LOGIN ROUTES
 app.get('/login', (req, res) => {
-    res.render('login', { title: 'Provider Login' });
+    res.render('login', { title: 'Provider Login', error: null });
 });
 
 app.post('/login', async (req, res) => {
@@ -113,24 +104,16 @@ app.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email });
 
-        if (!user) {
-            return res.render('login', { error: 'Invalid email or password.' });
+        if (!user || !(await bcrypt.compare(password, user.password))) {
+            return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
 
-        // Compare the submitted password with the hashed password in the DB
-        const isMatch = await bcrypt.compare(password, user.password);
-
-        if (!isMatch) {
-            return res.render('login', { error: 'Invalid email or password.' });
-        }
-
-        // Login successful: set session and redirect
         req.session.userId = user._id;
         res.redirect('/provider/profile'); 
 
     } catch (error) {
         console.error('Login Error:', error);
-        res.render('login', { error: 'An internal error occurred during login.' });
+        res.render('login', { error: 'An internal error occurred during login.', title: 'Login' });
     }
 });
 
@@ -147,21 +130,22 @@ app.get('/logout', (req, res) => {
 
 
 // 5.5 PROVIDER PROFILE (SECURE ROUTE)
-// Use the isLoggedIn middleware to protect this route
 app.get('/provider/profile', isLoggedIn, async (req, res) => {
     try {
-        // Fetch the logged-in user's data
         const provider = await User.findById(req.session.userId);
         if (!provider) {
             return res.redirect('/login');
         }
 
-        // Logic to determine trial status
         const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
         const trialEndDate = new Date(provider.trialStartDate.getTime() + ONE_WEEK_MS);
-        const isTrialActive = !provider.isSubscribed && new Date() < trialEndDate;
-        const daysLeft = Math.ceil((trialEndDate.getTime() - new Date().getTime()) / (1000 * 60 * 60 * 24));
-
+        const now = new Date();
+        
+        const isTrialActive = !provider.isSubscribed && now < trialEndDate;
+        let daysLeft = 0;
+        if (isTrialActive) {
+            daysLeft = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        }
 
         res.render('provider/profile', { 
             title: 'My Profile', 
@@ -175,17 +159,29 @@ app.get('/provider/profile', isLoggedIn, async (req, res) => {
     }
 });
 
-
-// 5.6 SUBSCRIPTION/PAYMENT ROUTE (Placeholder - requires M-Pesa integration)
+// 5.6 SUBSCRIPTION ROUTE (M-Pesa Integration Point)
 app.get('/subscribe', isLoggedIn, (req, res) => {
     res.render('subscribe', { title: 'Subscribe & Pay' });
 });
 
 
-// 5.7 SEARCH ROUTES (Placeholder - implementation needed)
-app.get('/search', (req, res) => {
-    // In the future, this will run a MongoDB query based on req.query
-    res.render('search-results', { title: 'Search Results', providers: [] });
+// 5.7 SEARCH ROUTES
+app.get('/search', async (req, res) => {
+    const { q, category } = req.query;
+    let query = { isSubscribed: true }; // ONLY search subscribed users
+
+    if (category) {
+        query.category = category;
+    }
+    // You would add keyword search logic here using regex on fields like 'name', 'category'
+
+    try {
+        const providers = await User.find(query);
+        res.render('search-results', { title: 'Search Results', providers, q, category });
+    } catch (error) {
+        console.error('Search Error:', error);
+        res.render('search-results', { title: 'Search Results', providers: [], q, category, error: 'Failed to perform search.' });
+    }
 });
 
 // === 6. START THE SERVER ===

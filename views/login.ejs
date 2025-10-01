@@ -1,10 +1,20 @@
-<h1>Provider Login</h1>
-<form method="POST" action="/login">
-    <label for="email">Email:</label>
-    <input type="email" id="email" name="email" required>
+<%- include('partials/head', { title: 'Login' }) %>
 
-    <label for="password">Password:</label>
-    <input type="password" id="password" name="password" required>
-    
-    <button type="submit">Log In</button>
-</form>
+<div class="form-container">
+    <h2>Service Provider Login</h2>
+    <% if (error) { %>
+        <p class="error-message"><%= error %></p>
+    <% } %>
+    <form method="POST" action="/login">
+        <label for="email">Email:</label>
+        <input type="email" id="email" name="email" required>
+
+        <label for="password">Password:</label>
+        <input type="password" id="password" name="password" required>
+        
+        <button type="submit" class="btn-primary">Log In</button>
+    </form>
+    <p>New Provider? <a href="/register">Register Here</a></p>
+</div>
+
+<%- include('partials/footer') %>

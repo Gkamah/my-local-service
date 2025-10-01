@@ -1,0 +1,15 @@
+<header>
+    <nav class="navbar">
+        <a href="/" class="logo">My Local Service</a>
+        <div class="nav-links">
+            <a href="/search">Search Services</a>
+            <% if (isLoggedIn) { %>
+                <a href="/provider/profile">Dashboard</a>
+                <a href="/logout">Logout</a>
+            <% } else { %>
+                <a href="/register">Register</a>
+                <a href="/login">Login</a>
+            <% } %>
+        </div>
+    </nav>
+</header>

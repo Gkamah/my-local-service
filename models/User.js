@@ -6,17 +6,17 @@ const userSchema = new mongoose.Schema({
     password: { type: String, required: true }, // Hashed password
     role: { type: String, enum: ['seeker', 'provider'], default: 'provider' },
     
-    // Provider Profile
+    // Provider Profile Fields
     name: String,
     category: { type: String, required: true },
     contactInfo: { type: String, required: true },
     profilePicture: String, 
     sampleWork: [String], 
     
-    // Subscription & Trial
+    // Subscription & Trial Logic
     isSubscribed: { type: Boolean, default: false },
     trialStartDate: { type: Date, default: Date.now },
-    subscriptionExpires: Date, // Nullable until paid
+    subscriptionExpires: Date, 
     mpesaTransactions: [String], 
 });
 
