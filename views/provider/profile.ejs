@@ -1,30 +1,204 @@
-<%- include('../partials/head', { title: 'Dashboard' }) %>
+<!-- views/provider/profile.ejs -->
+<%- include('../partials/head', { title: title }) %>
 
-<div class="dashboard">
-    <h2>Welcome, <%= provider.name %>!</h2>
-    
-    <% if (provider.isSubscribed) { %>
-        <div class="alert success">
-            You are a **fully subscribed** provider. Your listing is visible in search results.
-        </div>
-    <% } else if (isTrialActive) { %>
-        <div class="alert warning">
-            **TRIAL ACTIVE:** You have **<%= daysLeft %>** day(s) left in your free 7-day trial. <a href="/subscribe">Subscribe now</a> to keep your listing active!
-        </div>
-    <% } else { %>
-        <div class="alert danger">
-            **SUBSCRIPTION REQUIRED:** Your trial has expired. Your listing is **not visible** in search results. Please <a href="/subscribe">subscribe now</a>.
-        </div>
+<div class="container profile-container">
+    <div class="profile-header">
+        <h2><%= provider.name %>'s Service Profile</h2>
+        <a href="/logout" class="btn-secondary">Log Out</a>
+    </div>
+
+    <!-- Message and Error Alerts -->
+    <% if (message) { %>
+        <div class="alert success"><i class="fas fa-check-circle"></i> <%= message %></div>
+    <% } %>
+    <% if (error) { %>
+        <div class="alert danger"><i class="fas fa-exclamation-triangle"></i> <%= error %></div>
     <% } %>
 
-    <h3>Your Current Listing Details</h3>
-    <p><strong>Service Category:</strong> <%= provider.category %></p>
-    <p><strong>Contact Info:</strong> <%= provider.contactInfo %></p>
+    <div class="profile-status-section">
+        <h3>Account Status</h3>
+        <% if (provider.isSubscribed) { %>
+            <div class="status-alert status-success">
+                <i class="fas fa-check-circle"></i> You are a **Full Subscriber**. Your profile is visible in search results!
+            </div>
+        <% } else if (isTrialActive) { %>
+            <div class="status-alert status-warning">
+                <i class="fas fa-hourglass-half"></i> **Trial Active**: **<%= daysLeft %> day(s) left**. Subscribe now to ensure your listing remains active!
+                <a href="/subscribe" class="btn-primary subscribe-btn">Go to Subscription</a>
+            </div>
+        <% } else { %>
+            <div class="status-alert status-danger">
+                <i class="fas fa-exclamation-triangle"></i> **Trial Expired / Not Subscribed**. Your profile is currently hidden from search results.
+                <a href="/subscribe" class="btn-primary subscribe-btn">Reactivate Subscription</a>
+            </div>
+        <% } %>
+    </div>
     
-    <h4>Profile Picture & Sample Work</h4>
-    <p>*(Upload implementation needed here - requires Multer/Cloudinary)*</p>
+    <hr class="section-divider">
+
+    <div class="profile-info-section">
+        <h3>Public Information</h3>
+        <div class="info-group">
+            <p><strong>Business/Provider Name:</strong> <%= provider.name %></p>
+            <p><strong>Service Category:</strong> <span class="category-tag"><%= provider.category %></span></p>
+            <p><strong>Public Contact:</strong> <%= provider.contactInfo %></p>
+        </div>
+        
+        <!-- FIXED: Ensuring the link is correct and functional -->
+        <a href="/provider/edit" class="btn-primary edit-btn"><i class="fas fa-edit"></i> Edit Profile Information</a>
+    </div>
     
-    <button class="btn-secondary">Edit Profile</button>
+    <hr class="section-divider">
+
+    <div class="profile-meta-section">
+        <h3>Account Details</h3>
+        <div class="info-group meta-group">
+            <p><strong>Registration Email:</strong> <%= provider.email %></p>
+            <p><strong>Member Since:</strong> <%= provider.trialStartDate.toDateString() %></p>
+            <p><strong>User ID:</strong> <small><%= provider._id %></small></p>
+        </div>
+    </div>
 </div>
+
+<style>
+    /* Profile Page Styling for views/provider/profile.ejs */
+    .profile-container {
+        max-width: 800px;
+        margin: 2rem auto;
+        padding: 2.5rem;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        font-family: Arial, sans-serif;
+    }
+
+    .profile-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid #f0f0f5;
+        padding-bottom: 1.5rem;
+        margin-bottom: 2rem;
+    }
+
+    .profile-header h2 {
+        color: #1a1a40;
+        font-weight: 700;
+        font-size: 2rem;
+    }
+
+    .section-divider {
+        border: 0;
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 2rem 0;
+    }
+
+    /* Status Alerts */
+    .profile-status-section h3, .profile-info-section h3, .profile-meta-section h3 {
+        color: #1a1a40;
+        font-size: 1.25rem;
+        margin-bottom: 1rem;
+    }
+
+    .status-alert {
+        padding: 1.25rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        font-size: 1rem;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 15px;
+    }
+
+    .status-success { background-color: #e6f7e9; color: #38a169; border: 1px solid #99e0b4; }
+    .status-warning { background-color: #fff9e6; color: #d69e2e; border: 1px solid #ffe9a6; }
+    .status-danger { background-color: #fee2e2; color: #dc2626; border: 1px solid #fca5a5; }
+
+    .status-alert .subscribe-btn {
+        margin-left: auto; /* Push button to the right */
+        background-color: #1a1a40;
+        color: #fff;
+        border-radius: 6px;
+        padding: 0.5rem 1rem;
+        text-decoration: none;
+        transition: background-color 0.3s;
+    }
+    .status-alert .subscribe-btn:hover { background-color: #434375; }
+
+    /* Info Groups */
+    .info-group {
+        background-color: #f7f9fc;
+        border-radius: 8px;
+        padding: 1.5rem;
+        border-left: 5px solid #1a1a40;
+        margin-bottom: 1rem;
+    }
+
+    .info-group p {
+        margin: 0.5rem 0;
+        line-height: 1.5;
+        color: #333;
+    }
+
+    .category-tag {
+        display: inline-block;
+        padding: 0.2rem 0.6rem;
+        background-color: #e0f2f1;
+        color: #004d40;
+        border-radius: 4px;
+        font-size: 0.9rem;
+        font-weight: 600;
+    }
+
+    .edit-btn {
+        margin-top: 1rem;
+        display: inline-flex;
+        align-items: center;
+        gap: 8px;
+        background-color: #434375;
+    }
+    .edit-btn:hover {
+        background-color: #5d5d8e;
+    }
+    
+    /* General Alerts */
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-weight: 500;
+    }
+    .alert.success { background-color: #d1e7dd; color: #0f5132; }
+    .alert.danger { background-color: #f8d7da; color: #842029; }
+
+
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+        .profile-container {
+            padding: 1rem;
+            margin: 1rem auto;
+        }
+        .profile-header {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .profile-header h2 {
+            font-size: 1.5rem;
+        }
+        .status-alert {
+            flex-direction: column;
+            align-items: flex-start;
+            gap: 10px;
+        }
+        .status-alert .subscribe-btn {
+            margin-left: 0;
+            width: 100%;
+            text-align: center;
+        }
+    }
+</style>
 
 <%- include('../partials/footer') %>
