@@ -115,13 +115,17 @@ app.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email });
 
-        // CRITICAL LOGIN LOGIC CHECK: 
+        // DEBUG 1: Check if the user was found
         if (!user) {
+            console.log(`[LOGIN FAILED] User not found for email: ${email}`);
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
         
         // AWAITED PASSWORD COMPARISON
         const passwordMatch = await bcrypt.compare(password, user.password);
+
+        // DEBUG 2: Log the comparison result to the server console/logs
+        console.log(`[LOGIN DEBUG] Comparison result for ${email}: ${passwordMatch}`);
 
         if (!passwordMatch) {
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
