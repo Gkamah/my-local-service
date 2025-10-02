@@ -1,4 +1,5 @@
 <!-- views/search-results.ejs -->
+<!-- This template displays the list of providers and a dynamic detail view on click. -->
 <%- include('./partials/head', { title: title }) %>
 
 <div class="container p-4 md:p-8">
@@ -83,8 +84,8 @@
 
 <script>
     // Copy the providers array from the server-side to the client-side JavaScript
-    // This allows the client-side JS to access the data without re-querying the database
-    const providersData = <%- JSON.stringify(providers) %>;
+    // FIX: Safely stringify the providers array, defaulting to an empty array if undefined or null.
+    const providersData = <%- JSON.stringify(providers || []) %>;
     let activeProviderId = null;
 
     /**

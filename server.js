@@ -14,7 +14,7 @@ dotenv.config();
 const app = express(); 
 const PORT = process.env.PORT || 3000; 
 
-// CRITICAL FIX FOR DEPLOYED SESSIONS: Trust proxy
+// Trust the proxy (essential for cookies in Render)
 app.set('trust proxy', 1);
 
 // === 2. DATABASE CONNECTION ===
@@ -30,7 +30,7 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Express Session Middleware - Updated Cookie Configuration
+// Express Session Middleware
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
@@ -38,7 +38,7 @@ app.use(session({
     cookie: { 
         secure: process.env.NODE_ENV === 'production', 
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        sameSite: 'Lax' 
+        sameSite: 'Lax' // Critical fix for cross-origin redirects/cookies
     } 
 }));
 
@@ -61,11 +61,9 @@ function isLoggedIn(req, res, next) {
     res.redirect('/login');
 }
 
-// Define static categories that should always appear in the search filter
-const baseCategories = ['Driver', 'Plumber', 'Electrician', 'Carpenter', 'Painter', 'Mechanic']; 
+// Fixed list of categories to always appear in search filters
+const baseCategories = ['Driver', 'Plumber', 'Electrician', 'Carpenter', 'Painter', 'Mechanic'];
 
-// Default image placeholder (using a generic, widely available placeholder)
-const defaultProfilePic = 'https://placehold.co/100x100/1a1a40/ffffff?text=P+P'; 
 
 // === 5. CORE ROUTES ===
 
@@ -80,7 +78,7 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const { email, password, name, category, contactInfo, newCategory, description, profilePictureUrl } = req.body;
+    const { email, password, name, category, contactInfo, newCategory, profilePictureUrl, description } = req.body;
     
     let finalCategory = category;
     if (category === 'other' && newCategory && newCategory.trim().length > 0) {
@@ -88,10 +86,6 @@ app.post('/register', async (req, res) => {
     } else if (category === 'other' && (!newCategory || newCategory.trim().length === 0)) {
          return res.render('register', { error: 'Please specify the new category.', title: 'Register' });
     }
-    
-    // Use submitted URL or default placeholder
-    const finalProfilePic = profilePictureUrl || defaultProfilePic;
-    const finalDescription = description || 'A committed service provider.';
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -102,8 +96,8 @@ app.post('/register', async (req, res) => {
             name,
             category: finalCategory,
             contactInfo,
-            description: finalDescription, // <-- NEW FIELD
-            profilePictureUrl: finalProfilePic, // <-- NEW FIELD
+            profilePictureUrl, // Save Base64 data or URL
+            description,
             role: 'provider',
             isSubscribed: false,
             trialStartDate: new Date()
@@ -112,14 +106,11 @@ app.post('/register', async (req, res) => {
         await newUser.save();
 
         req.session.userId = newUser._id;
+        // MUST save session explicitly before redirecting
         req.session.save(err => {
-            if (err) {
-                console.error('Session Save Error on Register:', err);
-                return res.redirect('/provider/profile'); 
-            }
+            if (err) console.error("Session Save Error:", err);
             res.redirect('/provider/profile'); 
         });
-
     } catch (error) {
         console.error('Registration Error:', error);
         res.render('register', { error: 'Registration failed. Email may already be in use.', title: 'Register' });
@@ -147,14 +138,12 @@ app.post('/login', async (req, res) => {
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
 
+        // Success: set session and redirect
         req.session.userId = user._id;
-        
+        // Must explicitly save the session
         req.session.save(err => {
-            if (err) {
-                console.error('Session Save Error on Login:', err);
-                return res.render('login', { error: 'Failed to establish session. Try again.', title: 'Login' });
-            }
-            res.redirect('/provider/profile'); 
+            if (err) console.error("Session Save Error:", err);
+            res.redirect('/provider/profile');
         });
 
     } catch (error) {
@@ -191,7 +180,7 @@ app.get('/provider/profile', isLoggedIn, async (req, res) => {
         }
 
         res.render('provider/profile', { 
-            title: 'My Profile', 
+            title: 'My Profile (Dashboard)', 
             provider,
             isTrialActive,
             daysLeft 
@@ -202,91 +191,77 @@ app.get('/provider/profile', isLoggedIn, async (req, res) => {
     }
 });
 
-// 5.6 PROVIDER EDIT PROFILE (GET) 
+// 5.5b PROVIDER PROFILE EDIT GET
 app.get('/provider/edit', isLoggedIn, async (req, res) => {
     try {
         const provider = await User.findById(req.session.userId);
-        if (!provider) {
-            req.session.error = 'User not found.';
-            return res.redirect('/provider/profile');
-        }
-        // Format category for consistent comparison in the select dropdown
-        const currentCategory = provider.category.toLowerCase();
-        
         res.render('provider/edit-profile', { 
             title: 'Edit Profile', 
-            provider: provider,
-            currentCategory: currentCategory
+            provider,
+            baseCategories,
+            error: null 
         });
     } catch (error) {
         console.error('Edit Profile Load Error:', error);
-        req.session.error = 'Error loading edit form.';
-        res.redirect('/provider/profile');
+        res.status(500).send('Error loading profile edit form.');
     }
 });
 
-// 5.7 PROVIDER UPDATE PROFILE (POST) 
+// 5.5c PROVIDER PROFILE EDIT POST
 app.post('/provider/edit', isLoggedIn, async (req, res) => {
-    const { name, category, contactInfo, newCategory, description, profilePictureUrl } = req.body; // <-- ADD NEW FIELDS
+    const { name, category, contactInfo, newCategory, profilePictureUrl, description } = req.body;
+    
     let finalCategory = category;
-
-    // Handle "Other" category update logic
     if (category === 'other' && newCategory && newCategory.trim().length > 0) {
         finalCategory = newCategory.trim().charAt(0).toUpperCase() + newCategory.trim().slice(1).toLowerCase();
     } else if (category === 'other' && (!newCategory || newCategory.trim().length === 0)) {
-        req.session.error = 'Please specify the new category.';
-        return res.redirect('/provider/edit');
+         req.session.error = 'Please specify the new category.';
+         return res.redirect('/provider/edit');
     }
     
-    // Sanitize profile pic URL and description
-    const finalProfilePic = profilePictureUrl && profilePictureUrl.trim().length > 0 ? profilePictureUrl.trim() : defaultProfilePic;
-    const finalDescription = description || 'A committed service provider.';
-
-
     try {
-        await User.findByIdAndUpdate(req.session.userId, {
+        const updateData = {
             name,
             category: finalCategory,
             contactInfo,
-            description: finalDescription, // <-- UPDATE FIELD
-            profilePictureUrl: finalProfilePic // <-- UPDATE FIELD
-        }, { new: true, runValidators: true });
-
+            profilePictureUrl,
+            description
+        };
+        
+        await User.findByIdAndUpdate(req.session.userId, updateData, { new: true });
+        
         req.session.message = 'Profile updated successfully!';
         res.redirect('/provider/profile');
-
     } catch (error) {
         console.error('Profile Update Error:', error);
-        req.session.error = 'Failed to update profile due to a server error.';
+        req.session.error = 'Failed to update profile. Try again.';
         res.redirect('/provider/edit');
     }
 });
 
-// 5.8 SUBSCRIPTION ROUTE (GET)
+
+// 5.6 SUBSCRIPTION ROUTES
 app.get('/subscribe', isLoggedIn, async (req, res) => {
     try {
         const provider = await User.findById(req.session.userId);
-        if (!provider) {
-            req.session.error = 'User not found.';
-            return res.redirect('/provider/profile');
-        }
-        res.render('subscribe', { title: 'Activate Subscription', provider });
+        res.render('subscribe', { 
+            title: 'Subscribe & Pay', 
+            provider 
+        });
     } catch (error) {
-        console.error('Subscribe Load Error:', error);
-        req.session.error = 'Error loading subscription page.';
-        res.redirect('/provider/profile');
+        console.error('Subscribe page load error:', error);
+        res.status(500).send('Could not load subscription details.');
     }
 });
 
-// 5.9 SUBSCRIPTION ACTIVATION (POST Placeholder)
 app.post('/subscribe/activate', isLoggedIn, async (req, res) => {
     try {
-        // NOTE: In a real app, this is where payment processing (Stripe/PayPal) would happen.
-        // For now, we manually flip the subscribed status.
+        // In a real app, this is where payment processing (Stripe, M-Pesa, etc.) would happen.
+        // For now, we manually flip the subscription status.
         await User.findByIdAndUpdate(req.session.userId, { isSubscribed: true }, { new: true });
-
-        req.session.message = 'Subscription successfully activated! Your profile is now visible in search results.';
-        res.redirect('/provider/profile');
+        
+        req.session.message = 'Subscription Activated! You are now visible in search results.';
+        res.redirect('/provider/profile'); 
     } catch (error) {
         console.error('Subscription Activation Error:', error);
         req.session.error = 'Failed to activate subscription.';
@@ -294,107 +269,98 @@ app.post('/subscribe/activate', isLoggedIn, async (req, res) => {
     }
 });
 
-// 5.10 PROVIDER VIEW ROUTE (For search results click: Public Profile)
-app.get('/provider/view/:id', async (req, res) => {
-    try {
-        const providerId = req.params.id;
-        const provider = await User.findById(providerId);
-
-        if (!provider || !provider.isSubscribed) {
-            req.session.error = 'Provider not found or not currently subscribed.';
-            return res.redirect('/search');
-        }
-
-        // Renders the detailed public profile view
-        res.render('public-profile', { 
-            title: `${provider.name}'s Profile`, 
-            provider: provider,
-        });
-
-    } catch (error) {
-        console.error('Public Profile View Error:', error);
-        req.session.error = 'Error loading provider profile.';
-        res.redirect('/search');
-    }
-});
-
-
-// 5.11 SEARCH ROUTES -- UPDATED FOR DYNAMIC CATEGORIES
+// 5.7 SEARCH ROUTES
 app.get('/search', async (req, res) => {
-    const { q, category } = req.query;
-    let query = { isSubscribed: true }; 
+    // FIX: Destructure the expected input names 'query' and 'category'.
+    const { query, category } = req.query; 
 
-    if (category && category !== 'All Categories') {
-        query.category = category;
+    // FIX: Set default values to prevent ReferenceError if no query parameters are present.
+    const q = query || ''; 
+    const selectedCategory = category || '';
+
+    let mongoQuery = { isSubscribed: true }; 
+
+    if (selectedCategory && selectedCategory !== 'All Categories') {
+        mongoQuery.category = selectedCategory;
     }
     
     if (q) {
         const searchRegex = new RegExp(q, 'i');
-        query.$or = [
+        // Ensure $or only operates if the search term 'q' is present
+        mongoQuery.$or = [
             { name: searchRegex },
-            { category: searchRegex },
-            { contactInfo: searchRegex }
+            { description: searchRegex } // Searching description too
         ];
+        // If there's already a category filter, merge it with $or
+        if (selectedCategory) {
+             mongoQuery = { $and: [{ category: selectedCategory }, mongoQuery] };
+        }
+        
     }
+    
+    // Fetch unique subscribed categories to populate the filter dropdown
+    const dbCategories = await User.distinct('category', { isSubscribed: true });
+    // Combine base categories with unique database categories, ensuring uniqueness
+    const uniqueCategories = [...new Set([...baseCategories, ...dbCategories])].filter(c => c);
 
     try {
-        // 1. Fetch all unique categories from subscribed users
-        const dynamicCategories = await User.distinct('category', { isSubscribed: true });
+        const providers = await User.find(mongoQuery);
         
-        // Combine base categories and dynamic categories, ensuring uniqueness
-        let categoriesList = new Set([...baseCategories, ...dynamicCategories]);
-        
-        // Convert back to an array for EJS, filter out any potential empty strings, and sort
-        const uniqueCategories = Array.from(categoriesList)
-            .filter(cat => cat && cat.trim().length > 0)
-            .sort();
-        
-        // Always put 'All Categories' at the top
-        uniqueCategories.unshift('All Categories');
-        
-        // 2. Perform the main search query
-        const providers = await User.find(query);
-        
-        // 3. Render the view, passing the unique categories
+        // FIX: Pass the defined variables to the template
         res.render('search-results', { 
             title: 'Search Results', 
             providers, 
-            q: q || '', 
-            category: category || '',
-            uniqueCategories // <-- PASSING NEW DATA
+            query: q, 
+            selectedCategory: selectedCategory, 
+            uniqueCategories 
         });
     } catch (error) {
         console.error('Search Error:', error);
-        // Ensure error rendering passes an empty array and the categories to prevent crash
-        const uniqueCategories = ['All Categories', ...baseCategories]; 
         res.render('search-results', { 
             title: 'Search Results', 
             providers: [], 
-            q: q || '', 
-            category: category || '', 
-            error: 'Failed to perform search.',
-            uniqueCategories
+            query: q, 
+            selectedCategory: selectedCategory, 
+            uniqueCategories,
+            error: 'Failed to perform search.' 
         });
     }
 });
 
-// 5.12 FORGOT PASSWORD - Form
+// 5.10 PROVIDER VIEW ROUTE (Public, non-authenticated view)
+app.get('/provider/view/:id', async (req, res) => {
+    try {
+        const provider = await User.findById(req.params.id);
+        
+        if (!provider || !provider.isSubscribed) {
+            return res.status(404).send('Service provider not found or subscription inactive.');
+        }
+
+        res.render('public-profile', { 
+            title: `${provider.name}'s Profile`, 
+            provider 
+        });
+    } catch (error) {
+        console.error('Public Profile Load Error:', error);
+        res.status(500).send('Error loading public profile.');
+    }
+});
+
+
+// 5.8 FORGOT PASSWORD - Form
 app.get('/forgot-password', (req, res) => {
     res.render('forgot-password', { title: 'Forgot Password', error: null, message: null });
 });
 
-// 5.13 FORGOT PASSWORD - Process (Placeholder for sending email/token)
+// 5.9 FORGOT PASSWORD - Process (Placeholder)
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
-    
     try {
         const user = await User.findOne({ email });
-        
         if (!user) {
             req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
             return res.redirect('/forgot-password');
         }
-        
         console.log(`[PASSWORD RESET] Token link GENERATED for: ${email}`);
         req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
         return res.redirect('/forgot-password');
