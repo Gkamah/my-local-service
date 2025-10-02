@@ -61,6 +61,9 @@ function isLoggedIn(req, res, next) {
     res.redirect('/login');
 }
 
+// Define static categories that should always appear in the search filter
+const baseCategories = ['Driver', 'Plumber', 'Electrician', 'Carpenter', 'Painter', 'Mechanic']; 
+
 // === 5. CORE ROUTES ===
 
 // 5.1 HOME/LANDING PAGE
@@ -276,8 +279,35 @@ app.post('/subscribe/activate', isLoggedIn, async (req, res) => {
     }
 });
 
+// 5.10 PROVIDER VIEW ROUTE (Placeholder for search results click)
+app.get('/provider/view/:id', async (req, res) => {
+    try {
+        const providerId = req.params.id;
+        const provider = await User.findById(providerId);
 
-// 5.10 SEARCH ROUTES -- UPDATED FOR DYNAMIC CATEGORIES
+        if (!provider || !provider.isSubscribed) {
+            req.session.error = 'Provider not found or not currently subscribed.';
+            return res.redirect('/search');
+        }
+
+        // NOTE: This should render a detailed public profile view (e.g., 'views/public-profile.ejs')
+        // For now, we render the edit profile view as a placeholder
+        res.render('provider/edit-profile', { 
+            title: `Viewing ${provider.name}`, 
+            provider: provider,
+            currentCategory: provider.category.toLowerCase(),
+            isViewingPublic: true, // Flag to hide save button if viewing publicly
+        });
+
+    } catch (error) {
+        console.error('Public Profile View Error:', error);
+        req.session.error = 'Error loading provider profile.';
+        res.redirect('/search');
+    }
+});
+
+
+// 5.11 SEARCH ROUTES -- UPDATED FOR DYNAMIC CATEGORIES
 app.get('/search', async (req, res) => {
     const { q, category } = req.query;
     let query = { isSubscribed: true }; 
@@ -297,7 +327,18 @@ app.get('/search', async (req, res) => {
 
     try {
         // 1. Fetch all unique categories from subscribed users
-        const uniqueCategories = await User.distinct('category', { isSubscribed: true });
+        const dynamicCategories = await User.distinct('category', { isSubscribed: true });
+        
+        // Combine base categories and dynamic categories, ensuring uniqueness
+        let categoriesList = new Set([...baseCategories, ...dynamicCategories]);
+        
+        // Convert back to an array for EJS, filter out any potential empty strings, and sort
+        const uniqueCategories = Array.from(categoriesList)
+            .filter(cat => cat && cat.trim().length > 0)
+            .sort();
+        
+        // Always put 'All Categories' at the top
+        uniqueCategories.unshift('All Categories');
         
         // 2. Perform the main search query
         const providers = await User.find(query);
@@ -313,7 +354,7 @@ app.get('/search', async (req, res) => {
     } catch (error) {
         console.error('Search Error:', error);
         // Ensure error rendering passes an empty array and the categories to prevent crash
-        const uniqueCategories = []; 
+        const uniqueCategories = ['All Categories', ...baseCategories]; 
         res.render('search-results', { 
             title: 'Search Results', 
             providers: [], 
@@ -325,12 +366,12 @@ app.get('/search', async (req, res) => {
     }
 });
 
-// 5.11 FORGOT PASSWORD - Form
+// 5.12 FORGOT PASSWORD - Form
 app.get('/forgot-password', (req, res) => {
     res.render('forgot-password', { title: 'Forgot Password', error: null, message: null });
 });
 
-// 5.12 FORGOT PASSWORD - Process (Placeholder for sending email/token)
+// 5.13 FORGOT PASSWORD - Process (Placeholder for sending email/token)
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     
