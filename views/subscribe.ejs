@@ -1,0 +1,170 @@
+<!-- views/subscribe.ejs -->
+<%- include('./partials/head', { title: title }) %>
+
+<div class="container subscription-container">
+    <h2>Activate Full Subscription</h2>
+    <p class="subtitle">Secure your profile's visibility and continue attracting new customers.</p>
+    
+    <!-- Message and Error Alerts -->
+    <% if (message) { %>
+        <div class="alert success"><i class="fas fa-check-circle"></i> <%= message %></div>
+    <% } %>
+    <% if (error) { %>
+        <div class="alert danger"><i class="fas fa-exclamation-triangle"></i> <%= error %></div>
+    <% } %>
+
+    <div class="pricing-card">
+        <h3>Pro Provider Plan</h3>
+        <p class="price-tag">$19.99 / Month</p>
+        
+        <ul class="feature-list">
+            <li><i class="fas fa-check-circle"></i> Full profile visibility in Search Results.</li>
+            <li><i class="fas fa-check-circle"></i> Dynamic listing under your custom category (<%= provider.category %>).</li>
+            <li><i class="fas fa-check-circle"></i> Dedicated customer support.</li>
+        </ul>
+        
+        <div class="current-status-box">
+            <% if (provider.isSubscribed) { %>
+                <div class="status-active"><i class="fas fa-star"></i> Status: **ACTIVE SUBSCRIBER**</div>
+                <p>Thank you for being a subscriber. No further action needed.</p>
+                <a href="/provider/profile" class="btn-secondary back-btn">Return to Profile</a>
+            <% } else { %>
+                <div class="status-inactive"><i class="fas fa-exclamation-triangle"></i> Status: **TRIAL/EXPIRED**</div>
+                <p>Your profile is currently hidden. Activate your subscription now!</p>
+                
+                <!-- Placeholder Form for Subscription Activation -->
+                <form method="POST" action="/subscribe/activate">
+                    <button type="submit" class="btn-primary subscribe-btn">
+                        <i class="fas fa-lock"></i> Activate Subscription Now
+                    </button>
+                </form>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<style>
+    .subscription-container {
+        max-width: 550px;
+        margin: 3rem auto;
+        padding: 2.5rem;
+        background: #f7f9fc;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        text-align: center;
+        font-family: Arial, sans-serif;
+    }
+
+    .subscription-container h2 {
+        color: #1a1a40;
+        font-weight: 700;
+        font-size: 2rem;
+    }
+
+    .subscription-container .subtitle {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+
+    .pricing-card {
+        background: #ffffff;
+        border-radius: 12px;
+        padding: 2rem;
+        border: 2px solid #434375;
+        box-shadow: 0 4px 20px rgba(67, 67, 117, 0.1);
+    }
+
+    .pricing-card h3 {
+        color: #434375;
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    .price-tag {
+        font-size: 2.5rem;
+        font-weight: 800;
+        color: #1a1a40;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1rem;
+    }
+
+    .feature-list {
+        list-style: none;
+        padding: 0;
+        margin-bottom: 2rem;
+        text-align: left;
+    }
+
+    .feature-list li {
+        margin-bottom: 0.8rem;
+        font-size: 1rem;
+        color: #333;
+        display: flex;
+        align-items: center;
+    }
+
+    .feature-list i {
+        color: #38a169;
+        margin-right: 10px;
+        font-size: 1.1rem;
+    }
+
+    .current-status-box {
+        padding-top: 1.5rem;
+        border-top: 1px dashed #e0e0e0;
+    }
+    
+    .status-active, .status-inactive {
+        font-weight: 600;
+        padding: 0.5rem;
+        border-radius: 6px;
+        margin-bottom: 1rem;
+    }
+
+    .status-active {
+        background-color: #d1e7dd;
+        color: #0f5132;
+    }
+    
+    .status-inactive {
+        background-color: #f8d7da;
+        color: #842029;
+    }
+    
+    .subscribe-btn {
+        width: 100%;
+        padding: 15px 0;
+        background-color: #1a1a40;
+        border-radius: 8px;
+        font-size: 1.1rem;
+        margin-top: 1rem;
+    }
+
+    .subscribe-btn:hover {
+        background-color: #434375;
+    }
+    
+    .back-btn {
+        background-color: #adb5bd;
+        color: #fff;
+        width: 100%;
+        margin-top: 1rem;
+    }
+    .back-btn:hover {
+        background-color: #6c757d;
+    }
+
+    /* General Alerts */
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+        font-weight: 500;
+        text-align: left;
+    }
+    .alert.success { background-color: #d1e7dd; color: #0f5132; }
+    .alert.danger { background-color: #f8d7da; color: #842029; }
+</style>
+
+<%- include('./partials/footer') %>

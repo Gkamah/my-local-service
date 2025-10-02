@@ -244,13 +244,40 @@ app.post('/provider/edit', isLoggedIn, async (req, res) => {
     }
 });
 
-// 5.8 SUBSCRIPTION ROUTE 
-app.get('/subscribe', isLoggedIn, (req, res) => {
-    res.render('subscribe', { title: 'Subscribe & Pay' });
+// 5.8 SUBSCRIPTION ROUTE (GET)
+app.get('/subscribe', isLoggedIn, async (req, res) => {
+    try {
+        const provider = await User.findById(req.session.userId);
+        if (!provider) {
+            req.session.error = 'User not found.';
+            return res.redirect('/provider/profile');
+        }
+        res.render('subscribe', { title: 'Activate Subscription', provider });
+    } catch (error) {
+        console.error('Subscribe Load Error:', error);
+        req.session.error = 'Error loading subscription page.';
+        res.redirect('/provider/profile');
+    }
+});
+
+// 5.9 SUBSCRIPTION ACTIVATION (POST Placeholder)
+app.post('/subscribe/activate', isLoggedIn, async (req, res) => {
+    try {
+        // NOTE: In a real app, this is where payment processing (Stripe/PayPal) would happen.
+        // For now, we manually flip the subscribed status.
+        await User.findByIdAndUpdate(req.session.userId, { isSubscribed: true }, { new: true });
+
+        req.session.message = 'Subscription successfully activated! Your profile is now visible in search results.';
+        res.redirect('/provider/profile');
+    } catch (error) {
+        console.error('Subscription Activation Error:', error);
+        req.session.error = 'Failed to activate subscription.';
+        res.redirect('/subscribe');
+    }
 });
 
 
-// 5.9 SEARCH ROUTES -- UPDATED FOR DYNAMIC CATEGORIES
+// 5.10 SEARCH ROUTES -- UPDATED FOR DYNAMIC CATEGORIES
 app.get('/search', async (req, res) => {
     const { q, category } = req.query;
     let query = { isSubscribed: true }; 
@@ -298,12 +325,12 @@ app.get('/search', async (req, res) => {
     }
 });
 
-// 5.10 FORGOT PASSWORD - Form
+// 5.11 FORGOT PASSWORD - Form
 app.get('/forgot-password', (req, res) => {
     res.render('forgot-password', { title: 'Forgot Password', error: null, message: null });
 });
 
-// 5.11 FORGOT PASSWORD - Process (Placeholder for sending email/token)
+// 5.12 FORGOT PASSWORD - Process (Placeholder for sending email/token)
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     
