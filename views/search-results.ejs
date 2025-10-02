@@ -1,24 +1,264 @@
-<%- include('partials/head', { title: 'Search Results' }) %>
+<!-- views/search-results.ejs -->
+<%- include('./partials/head', { title: title }) %>
 
-<div class="search-results-page">
-    <h2>Search Results</h2>
+<div class="container search-container">
+    <div class="search-form-section">
+        <h2>Find Local Service Providers</h2>
+        <p class="subtitle">Search our network of fully subscribed and verified businesses.</p>
 
-    <% if (providers && providers.length > 0) { %>
-        <p>Found <%= providers.length %> provider(s).</p>
-        <div class="provider-list">
-            <% providers.forEach(provider => { %>
-                <div class="provider-card">
-                    <h3><a href="/provider/<%= provider._id %>"><%= provider.name %></a></h3>
-                    <p>Category: <%= provider.category %></p>
-                    <p>Contact: <%= provider.contactInfo %></p>
-                </div>
-            <% }) %>
-        </div>
-    <% } else { %>
-        <div class="alert warning">
-            No service providers found matching your criteria, or the search returned no results.
-        </div>
-    <% } %>
+        <!-- Search Form -->
+        <form action="/search" method="GET" class="search-form">
+            <input type="text" name="q" placeholder="Search by name, category, or contact info..." value="<%= q %>">
+            
+            <select name="category">
+                <option value="All Categories" <%= category === 'All Categories' || !category ? 'selected' : '' %>>All Categories</option>
+                <option value="Plumbing" <%= category === 'Plumbing' ? 'selected' : '' %>>Plumbing</option>
+                <option value="Electrician" <%= category === 'Electrician' ? 'selected' : '' %>>Electrician</option>
+                <option value="Gardening" <%= category === 'Gardening' ? 'selected' : '' %>>Gardening</option>
+                <option value="Cleaning" <%= category === 'Cleaning' ? 'selected' : '' %>>Cleaning</option>
+                <!-- Since categories are dynamic, we only list the common ones here -->
+            </select>
+            
+            <button type="submit" class="btn-primary">Search</button>
+        </form>
+    </div>
+
+    <hr class="section-divider">
+
+    <div class="results-section">
+        <% if (error) { %>
+            <div class="alert danger"><i class="fas fa-exclamation-triangle"></i> <%= error %></div>
+        <% } %>
+        
+        <% if (providers.length > 0) { %>
+            <h3 class="results-header">Found <%= providers.length %> Provider(s)</h3>
+            
+            <div class="provider-list">
+                <% providers.forEach(provider => { %>
+                    <div class="provider-card">
+                        <div class="card-header">
+                            <h4 class="provider-name"><i class="fas fa-briefcase"></i> <%= provider.name %></h4>
+                            <span class="category-tag"><%= provider.category %></span>
+                        </div>
+                        <div class="card-body">
+                            <p class="contact-info">
+                                <i class="fas fa-phone"></i> 
+                                Contact: <a href="tel:<%= provider.contactInfo %>"><%= provider.contactInfo %></a>
+                            </p>
+                            <p class="status-badge status-success">
+                                <i class="fas fa-certificate"></i> Verified Subscriber
+                            </p>
+                        </div>
+                    </div>
+                <% }); %>
+            </div>
+            
+        <% } else { %>
+            <div class="no-results-alert">
+                <i class="fas fa-info-circle"></i>
+                <h3>No Results Found</h3>
+                <p>We couldn't find any subscribed providers matching your search. Please try a different query or category.</p>
+            </div>
+        <% } %>
+    </div>
 </div>
 
-<%- include('partials/footer') %>
+<style>
+    .search-container {
+        max-width: 900px;
+        margin: 2rem auto;
+        padding: 2.5rem;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        font-family: Arial, sans-serif;
+    }
+
+    .search-form-section h2 {
+        color: #1a1a40;
+        font-weight: 700;
+        font-size: 2rem;
+        margin-bottom: 0.5rem;
+    }
+    
+    .search-form-section .subtitle {
+        color: #6c757d;
+        margin-bottom: 2rem;
+    }
+
+    /* Search Form Layout */
+    .search-form {
+        display: flex;
+        gap: 10px;
+        align-items: center;
+        padding: 1.5rem;
+        background-color: #f7f9fc;
+        border-radius: 8px;
+        border: 1px solid #e0e0e0;
+    }
+
+    .search-form input[type="text"], .search-form select {
+        flex-grow: 1;
+        padding: 10px 15px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 1rem;
+        transition: border-color 0.3s;
+    }
+
+    .search-form input[type="text"]:focus, .search-form select:focus {
+        border-color: #434375;
+        outline: none;
+        box-shadow: 0 0 0 3px rgba(67, 67, 117, 0.1);
+    }
+
+    .search-form button {
+        flex-shrink: 0;
+        padding: 10px 20px;
+        background-color: #1a1a40;
+        color: white;
+        border: none;
+        border-radius: 6px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+
+    .search-form button:hover {
+        background-color: #434375;
+    }
+    
+    .section-divider {
+        border: 0;
+        height: 1px;
+        background-color: #e0e0e0;
+        margin: 2rem 0;
+    }
+
+    /* Results Display */
+    .results-header {
+        color: #1a1a40;
+        font-size: 1.5rem;
+        margin-bottom: 1.5rem;
+        border-bottom: 2px solid #f0f0f5;
+        padding-bottom: 0.5rem;
+    }
+
+    .provider-list {
+        display: grid;
+        gap: 20px;
+    }
+
+    .provider-card {
+        background: #ffffff;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+        padding: 1.5rem;
+        box-shadow: 0 4px 10px rgba(0, 0, 0, 0.05);
+        transition: transform 0.2s;
+    }
+
+    .provider-card:hover {
+        transform: translateY(-3px);
+        box-shadow: 0 6px 15px rgba(0, 0, 0, 0.1);
+    }
+    
+    .card-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+        padding-bottom: 0.5rem;
+        border-bottom: 1px dashed #e9ecef;
+    }
+
+    .provider-name {
+        color: #1a1a40;
+        font-size: 1.25rem;
+        font-weight: 600;
+    }
+
+    .provider-name i {
+        margin-right: 8px;
+        color: #434375;
+    }
+
+    .category-tag {
+        display: inline-block;
+        padding: 0.3rem 0.8rem;
+        background-color: #e0f2f1;
+        color: #004d40;
+        border-radius: 4px;
+        font-size: 0.85rem;
+        font-weight: 600;
+    }
+    
+    .card-body p {
+        margin: 0.5rem 0;
+        color: #333;
+    }
+    
+    .contact-info a {
+        color: #1a1a40;
+        font-weight: 500;
+        text-decoration: none;
+        transition: color 0.2s;
+    }
+    
+    .contact-info a:hover {
+        color: #434375;
+        text-decoration: underline;
+    }
+
+    .status-badge {
+        font-size: 0.85rem;
+        margin-top: 1rem;
+        padding: 0.4rem 0.8rem;
+        border-radius: 20px;
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        font-weight: 600;
+    }
+
+    .status-success {
+        background-color: #e6f7e9;
+        color: #38a169;
+    }
+
+    /* No Results Alert */
+    .no-results-alert {
+        text-align: center;
+        padding: 3rem;
+        border: 2px dashed #e0e0e0;
+        border-radius: 8px;
+        color: #6c757d;
+        margin-top: 2rem;
+    }
+    .no-results-alert i {
+        font-size: 3rem;
+        color: #adb5bd;
+        margin-bottom: 1rem;
+    }
+    .no-results-alert h3 {
+        color: #1a1a40;
+        font-size: 1.5rem;
+        margin-bottom: 0.5rem;
+    }
+
+    /* Responsive adjustments */
+    @media (max-width: 768px) {
+        .search-form {
+            flex-direction: column;
+            align-items: stretch;
+        }
+        .search-form input[type="text"], .search-form select, .search-form button {
+            width: 100%;
+        }
+        .provider-card {
+            padding: 1rem;
+        }
+    }
+</style>
+
+<%- include('./partials/footer') %>
