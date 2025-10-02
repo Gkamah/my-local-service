@@ -14,6 +14,10 @@ dotenv.config();
 const app = express(); 
 const PORT = process.env.PORT || 3000; 
 
+// CRITICAL FIX FOR DEPLOYED SESSIONS: Trust proxy
+// This is necessary when running behind a reverse proxy like Render
+app.set('trust proxy', 1);
+
 // === 2. DATABASE CONNECTION ===
 mongoose.connect(process.env.DATABASE_URL)
     .then(() => console.log('MongoDB connected successfully'))
@@ -27,14 +31,16 @@ app.use(express.static(path.join(__dirname, 'public')));
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 
-// Express Session Middleware
+// Express Session Middleware - Updated Cookie Configuration
 app.use(session({
     secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
     cookie: { 
         secure: process.env.NODE_ENV === 'production', 
-        maxAge: 1000 * 60 * 60 * 24 // 24 hours
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
+        // FIX: Add sameSite to ensure cookie is sent by browser after redirect
+        sameSite: 'Lax' 
     } 
 }));
 
@@ -50,9 +56,11 @@ app.use((req, res, next) => {
 
 // === 4. AUTH MIDDLEWARE === 
 function isLoggedIn(req, res, next) {
+    // If the session ID exists, proceed to the route handler
     if (req.session.userId) {
         return next();
     }
+    // Otherwise, redirect to login
     req.session.error = 'You must be logged in to access that page.';
     res.redirect('/login');
 }
@@ -99,11 +107,10 @@ app.post('/register', async (req, res) => {
         console.log(`[REGISTER SUCCESS] New user created with ID: ${newUser._id}`);
 
         req.session.userId = newUser._id;
-        // The redirect here is generally okay because the user is new, but we will apply the fix pattern here too for consistency.
+        // Explicitly save the session before redirecting
         req.session.save(err => {
             if (err) {
                 console.error('Session Save Error on Register:', err);
-                // Fallback to anonymous session creation if save fails
                 return res.redirect('/provider/profile'); 
             }
             res.redirect('/provider/profile'); 
