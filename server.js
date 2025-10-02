@@ -78,7 +78,7 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const { email, password, name, category, contactInfo, newCategory, profilePictureUrl, description } = req.body;
+    const { email, password, name, category, contactInfo, newCategory, profilePictureData, description } = req.body;
     
     let finalCategory = category;
     if (category === 'other' && newCategory && newCategory.trim().length > 0) {
@@ -96,7 +96,8 @@ app.post('/register', async (req, res) => {
             name,
             category: finalCategory,
             contactInfo,
-            profilePictureUrl, // Save Base64 data or URL
+            // Use profilePictureData (Base64) from the file input
+            profilePictureUrl: profilePictureData, 
             description,
             role: 'provider',
             isSubscribed: false,
@@ -207,14 +208,15 @@ app.get('/provider/edit', isLoggedIn, async (req, res) => {
     }
 });
 
-// 5.5c PROVIDER PROFILE EDIT POST
+// 5.5c PROVIDER PROFILE EDIT POST (FIXED FOR INTERNAL SERVER ERROR)
 app.post('/provider/edit', isLoggedIn, async (req, res) => {
-    const { name, category, contactInfo, newCategory, profilePictureUrl, description } = req.body;
+    const { name, category, contactInfo, newCategory, profilePictureData, description } = req.body;
     
     let finalCategory = category;
     if (category === 'other' && newCategory && newCategory.trim().length > 0) {
         finalCategory = newCategory.trim().charAt(0).toUpperCase() + newCategory.trim().slice(1).toLowerCase();
     } else if (category === 'other' && (!newCategory || newCategory.trim().length === 0)) {
+         // Handle error case for required field when 'other' is selected
          req.session.error = 'Please specify the new category.';
          return res.redirect('/provider/edit');
     }
@@ -224,17 +226,24 @@ app.post('/provider/edit', isLoggedIn, async (req, res) => {
             name,
             category: finalCategory,
             contactInfo,
-            profilePictureUrl,
+            profilePictureUrl: profilePictureData, // Update with new Base64 data
             description
         };
         
-        await User.findByIdAndUpdate(req.session.userId, updateData, { new: true });
+        // This should prevent the server crash and return an error message
+        const result = await User.findByIdAndUpdate(req.session.userId, updateData, { new: true, runValidators: true });
+        
+        if (!result) {
+             throw new Error("User not found during update.");
+        }
         
         req.session.message = 'Profile updated successfully!';
         res.redirect('/provider/profile');
     } catch (error) {
-        console.error('Profile Update Error:', error);
-        req.session.error = 'Failed to update profile. Try again.';
+        console.error('Profile Update Error (500):', error); // Log the specific error
+        
+        // Set a user-friendly error message and redirect
+        req.session.error = 'Failed to update profile. Please check your data and try again.';
         res.redirect('/provider/edit');
     }
 });
@@ -271,10 +280,9 @@ app.post('/subscribe/activate', isLoggedIn, async (req, res) => {
 
 // 5.7 SEARCH ROUTES
 app.get('/search', async (req, res) => {
-    // FIX: Destructure the expected input names 'query' and 'category'.
     const { query, category } = req.query; 
 
-    // FIX: Set default values to prevent ReferenceError if no query parameters are present.
+    // FIX: Defaulting query/category to empty string to prevent EJS ReferenceError
     const q = query || ''; 
     const selectedCategory = category || '';
 
@@ -286,27 +294,24 @@ app.get('/search', async (req, res) => {
     
     if (q) {
         const searchRegex = new RegExp(q, 'i');
-        // Ensure $or only operates if the search term 'q' is present
         mongoQuery.$or = [
             { name: searchRegex },
-            { description: searchRegex } // Searching description too
+            { description: searchRegex } 
         ];
-        // If there's already a category filter, merge it with $or
+        
         if (selectedCategory) {
              mongoQuery = { $and: [{ category: selectedCategory }, mongoQuery] };
         }
         
     }
     
-    // Fetch unique subscribed categories to populate the filter dropdown
     const dbCategories = await User.distinct('category', { isSubscribed: true });
-    // Combine base categories with unique database categories, ensuring uniqueness
+    // Combine base categories with subscribed categories for a comprehensive filter list
     const uniqueCategories = [...new Set([...baseCategories, ...dbCategories])].filter(c => c);
 
     try {
         const providers = await User.find(mongoQuery);
         
-        // FIX: Pass the defined variables to the template
         res.render('search-results', { 
             title: 'Search Results', 
             providers, 

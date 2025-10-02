@@ -107,39 +107,52 @@
 
         if (provider) {
             detailContainer.innerHTML = `
-                <div class="w-full">
-                    <div class="flex items-center space-x-6 mb-6 pb-4 border-b border-gray-300">
-                        <img src="${provider.profilePictureUrl || 'https://placehold.co/96x96/1a1a40/ffffff?text=P+P'}" 
+                <div class="w-full space-y-6">
+                    <!-- Header Section: Image, Name, Category -->
+                    <div class="flex flex-col sm:flex-row items-start sm:items-center space-y-4 sm:space-y-0 sm:space-x-6 pb-6 border-b border-[#8a2be2]">
+                        <img src="${provider.profilePictureUrl || 'https://placehold.co/100x100/1a1a40/ffffff?text=P'}" 
                              alt="${provider.name}'s Profile Picture" 
-                             class="w-24 h-24 rounded-full object-cover border-4 border-[#8a2be2] shadow-lg"
-                             onerror="this.onerror=null;this.src='https://placehold.co/96x96/1a1a40/ffffff?text=P+P';">
+                             class="w-24 h-24 rounded-full object-cover border-4 border-[#8a2be2] shadow-xl"
+                             onerror="this.onerror=null;this.src='https://placehold.co/100x100/1a1a40/ffffff?text=P';">
                         <div>
-                            <h2 class="text-3xl font-bold text-[#1a1a40]">${provider.name}</h2>
-                            <p class="text-xl text-[#434375] font-medium"><i class="fas fa-tools mr-2"></i> ${provider.category}</p>
+                            <h2 class="text-4xl font-extrabold text-[#1a1a40]">${provider.name}</h2>
+                            <p class="text-xl text-[#434375] font-medium mt-1">
+                                <i class="fas fa-wrench mr-2 text-[#8a2be2]"></i> ${provider.category}
+                            </p>
                         </div>
                     </div>
                     
-                    <div class="space-y-4">
-                        <h3 class="text-2xl font-semibold text-[#1a1a40] border-l-4 border-purple-500 pl-3">Services Offered</h3>
-                        <p class="text-gray-700 leading-relaxed bg-white p-4 rounded-lg shadow-sm italic">
-                            ${provider.description || 'The service provider has not added a description yet.'}
+                    <!-- Services Offered Section -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                        <h3 class="text-2xl font-bold text-[#1a1a40] mb-3 flex items-center">
+                            <i class="fas fa-list-ul mr-3 text-purple-600"></i> Services Offered & Bio
+                        </h3>
+                        <p class="text-gray-700 leading-relaxed italic">
+                            ${provider.description || 'The service professional has not yet provided a detailed description of their services.'}
                         </p>
-                        
-                        <h3 class="text-2xl font-semibold text-[#1a1a40] border-l-4 border-purple-500 pl-3 pt-4">Contact Information</h3>
-                        <div class="bg-white p-4 rounded-lg shadow-sm space-y-2">
-                            <p class="text-gray-700">
-                                <i class="fas fa-phone mr-3 text-green-600"></i> 
+                    </div>
+                    
+                    <!-- Contact Information Section -->
+                    <div class="bg-white p-6 rounded-xl shadow-lg border border-gray-100">
+                        <h3 class="text-2xl font-bold text-[#1a1a40] mb-3 flex items-center">
+                            <i class="fas fa-address-book mr-3 text-green-600"></i> Contact Information
+                        </h3>
+                        <div class="space-y-3">
+                            <p class="text-gray-700 flex items-center">
+                                <i class="fas fa-phone mr-3 text-green-600 w-6"></i> 
                                 <strong>Phone/WhatsApp:</strong> ${provider.contactInfo}
                             </p>
-                            <p class="text-gray-700">
-                                <i class="fas fa-envelope mr-3 text-red-600"></i> 
+                            <p class="text-gray-700 flex items-center">
+                                <i class="fas fa-envelope mr-3 text-red-600 w-6"></i> 
                                 <strong>Email:</strong> ${provider.email}
                             </p>
-                            <button class="mt-4 w-full py-3 bg-[#1a1a40] text-white font-bold rounded-lg hover:bg-[#434375] transition duration-200">
-                                <i class="fas fa-comments mr-2"></i> Book This Service Provider
-                            </button>
                         </div>
                     </div>
+
+                    <!-- Action Button -->
+                    <button class="mt-4 w-full py-4 bg-[#1a1a40] text-white font-extrabold text-lg rounded-xl hover:bg-[#434375] transition duration-200 shadow-md">
+                        <i class="fas fa-calendar-check mr-2"></i> Request Service Now
+                    </button>
                 </div>
             `;
         } else {
