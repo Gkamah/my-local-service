@@ -279,7 +279,7 @@ app.post('/subscribe/activate', isLoggedIn, async (req, res) => {
     }
 });
 
-// 5.10 PROVIDER VIEW ROUTE (Placeholder for search results click)
+// 5.10 PROVIDER VIEW ROUTE (For search results click: Public Profile)
 app.get('/provider/view/:id', async (req, res) => {
     try {
         const providerId = req.params.id;
@@ -290,13 +290,10 @@ app.get('/provider/view/:id', async (req, res) => {
             return res.redirect('/search');
         }
 
-        // NOTE: This should render a detailed public profile view (e.g., 'views/public-profile.ejs')
-        // For now, we render the edit profile view as a placeholder
-        res.render('provider/edit-profile', { 
-            title: `Viewing ${provider.name}`, 
+        // Renders the detailed public profile view
+        res.render('public-profile', { 
+            title: `${provider.name}'s Profile`, 
             provider: provider,
-            currentCategory: provider.category.toLowerCase(),
-            isViewingPublic: true, // Flag to hide save button if viewing publicly
         });
 
     } catch (error) {
