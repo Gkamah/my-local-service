@@ -64,6 +64,9 @@ function isLoggedIn(req, res, next) {
 // Define static categories that should always appear in the search filter
 const baseCategories = ['Driver', 'Plumber', 'Electrician', 'Carpenter', 'Painter', 'Mechanic']; 
 
+// Default image placeholder (using a generic, widely available placeholder)
+const defaultProfilePic = 'https://placehold.co/100x100/1a1a40/ffffff?text=P+P'; 
+
 // === 5. CORE ROUTES ===
 
 // 5.1 HOME/LANDING PAGE
@@ -77,7 +80,7 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
-    const { email, password, name, category, contactInfo, newCategory } = req.body;
+    const { email, password, name, category, contactInfo, newCategory, description, profilePictureUrl } = req.body;
     
     let finalCategory = category;
     if (category === 'other' && newCategory && newCategory.trim().length > 0) {
@@ -85,6 +88,10 @@ app.post('/register', async (req, res) => {
     } else if (category === 'other' && (!newCategory || newCategory.trim().length === 0)) {
          return res.render('register', { error: 'Please specify the new category.', title: 'Register' });
     }
+    
+    // Use submitted URL or default placeholder
+    const finalProfilePic = profilePictureUrl || defaultProfilePic;
+    const finalDescription = description || 'A committed service provider.';
 
     try {
         const hashedPassword = await bcrypt.hash(password, 10);
@@ -95,6 +102,8 @@ app.post('/register', async (req, res) => {
             name,
             category: finalCategory,
             contactInfo,
+            description: finalDescription, // <-- NEW FIELD
+            profilePictureUrl: finalProfilePic, // <-- NEW FIELD
             role: 'provider',
             isSubscribed: false,
             trialStartDate: new Date()
@@ -218,7 +227,7 @@ app.get('/provider/edit', isLoggedIn, async (req, res) => {
 
 // 5.7 PROVIDER UPDATE PROFILE (POST) 
 app.post('/provider/edit', isLoggedIn, async (req, res) => {
-    const { name, category, contactInfo, newCategory } = req.body;
+    const { name, category, contactInfo, newCategory, description, profilePictureUrl } = req.body; // <-- ADD NEW FIELDS
     let finalCategory = category;
 
     // Handle "Other" category update logic
@@ -228,12 +237,19 @@ app.post('/provider/edit', isLoggedIn, async (req, res) => {
         req.session.error = 'Please specify the new category.';
         return res.redirect('/provider/edit');
     }
+    
+    // Sanitize profile pic URL and description
+    const finalProfilePic = profilePictureUrl && profilePictureUrl.trim().length > 0 ? profilePictureUrl.trim() : defaultProfilePic;
+    const finalDescription = description || 'A committed service provider.';
+
 
     try {
         await User.findByIdAndUpdate(req.session.userId, {
             name,
             category: finalCategory,
-            contactInfo
+            contactInfo,
+            description: finalDescription, // <-- UPDATE FIELD
+            profilePictureUrl: finalProfilePic // <-- UPDATE FIELD
         }, { new: true, runValidators: true });
 
         req.session.message = 'Profile updated successfully!';
@@ -241,7 +257,6 @@ app.post('/provider/edit', isLoggedIn, async (req, res) => {
 
     } catch (error) {
         console.error('Profile Update Error:', error);
-        // Check for MongoDB validation errors if necessary, but a generic error works here
         req.session.error = 'Failed to update profile due to a server error.';
         res.redirect('/provider/edit');
     }
