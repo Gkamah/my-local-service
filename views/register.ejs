@@ -1,71 +1,276 @@
 <!-- views/register.ejs -->
-<%- include('partials/head', { title: 'Register' }) %>
+<%- include('./partials/head', { title: title }) %>
 
-<div class="form-container">
+<div class="container auth-container">
     <h2>Register as a Service Provider</h2>
-    
+    <p class="subtitle">Join our platform to get discovered by new customers.</p>
+
     <% if (error) { %>
-        <p class="error-message"><%= error %></p>
+        <div class="alert danger"><i class="fas fa-exclamation-triangle"></i> <%= error %></div>
     <% } %>
-    
-    <form method="POST" action="/register">
-        <label for="email">Email:</label>
-        <input type="email" id="email" name="email" required>
 
-        <label for="password">Password:</label>
-        <input type="password" id="password" name="password" required>
-        
-        <label for="name">Business Name / Name:</label>
-        <input type="text" id="name" name="name" required>
+    <form action="/register" method="POST" class="auth-form">
+        <section class="form-section">
+            <h3>Account Details</h3>
+            <div class="form-group">
+                <label for="email"><i class="fas fa-envelope"></i> Email</label>
+                <input type="email" id="email" name="email" required placeholder="name@example.com">
+            </div>
+            <div class="form-group">
+                <label for="password"><i class="fas fa-lock"></i> Password</label>
+                <input type="password" id="password" name="password" required placeholder="Minimum 6 characters">
+            </div>
+        </section>
 
-        <label for="category">Service Category:</label>
-        <select id="category" name="category" required onchange="checkCategory(this)">
-            <option value="">-- Select or Add New --</option>
-            <option value="plumbing">Plumbing</option>
-            <option value="electrician">Electrician</option>
-            <option value="gardening">Gardening</option>
-            <option value="cleaning">Cleaning</option>
-            <option value="other">Other (Specify Below)</option>
-        </select>
-        
-        <!-- Conditional Input Field for New Category -->
-        <div id="newCategoryContainer" style="display:none; margin-top: 10px;">
-            <label for="newCategory">Enter New Category Name:</label>
-            <input type="text" id="newCategory" name="newCategory" placeholder="e.g., Drone Photography">
+        <section class="form-section">
+            <h3>Professional Details</h3>
+            <div class="form-group">
+                <label for="name"><i class="fas fa-signature"></i> Business Name / Your Name</label>
+                <input type="text" id="name" name="name" required placeholder="e.g., Jane's Plumbing Services">
+            </div>
+
+            <div class="form-group">
+                <label for="contactInfo"><i class="fas fa-phone"></i> Contact Info (Phone/WhatsApp)</label>
+                <input type="text" id="contactInfo" name="contactInfo" required placeholder="+254...">
+            </div>
+            
+            <div class="form-group">
+                <label for="category"><i class="fas fa-tools"></i> Primary Service Category</label>
+                <select id="category" name="category" onchange="toggleNewCategoryField()">
+                    <option value="Driver">Driver</option>
+                    <option value="Plumber">Plumber</option>
+                    <option value="Electrician">Electrician</option>
+                    <option value="Carpenter">Carpenter</option>
+                    <option value="Painter">Painter</option>
+                    <option value="Mechanic">Mechanic</option>
+                    <option value="other">Other (Specify Below)</option>
+                </select>
+            </div>
+            
+            <div class="form-group hidden" id="newCategoryGroup">
+                <label for="newCategory"><i class="fas fa-plus-circle"></i> Specify New Category</label>
+                <input type="text" id="newCategory" name="newCategory" placeholder="e.g., HVAC Technician">
+            </div>
+        </section>
+
+        <!-- UPDATED FIELDS: File Upload for Profile Picture and Description -->
+        <section class="form-section profile-content-section">
+            <h3>Profile Branding (Optional)</h3>
+            
+            <div class="form-group profile-pic-group">
+                <label for="profilePictureFile"><i class="fas fa-image"></i> Upload Profile Picture</label>
+                <!-- Input type changed to file -->
+                <input type="file" id="profilePictureFile" name="profilePictureFile" accept="image/*" onchange="previewImage(event)">
+                <small class="help-text">Select an image file (PNG, JPG) from your device.</small>
+                
+                <!-- Hidden input to send the Base64 data to the server as 'profilePictureUrl' -->
+                <input type="hidden" id="profilePictureData" name="profilePictureUrl">
+                
+                <!-- Image Preview -->
+                <img id="imagePreview" src="" alt="Image Preview" class="hidden image-preview-style">
+            </div>
+            
+            <div class="form-group">
+                <label for="description"><i class="fas fa-pen-alt"></i> Description of Services</label>
+                <textarea id="description" name="description" rows="3" maxlength="500" 
+                          placeholder="Briefly describe your expertise and the services you offer (Max 500 chars)."></textarea>
+            </div>
+        </section>
+
+
+        <button type="submit" class="btn-primary"><i class="fas fa-user-plus"></i> Complete Registration</button>
+        <div class="auth-footer">
+            Already have an account? <a href="/login">Login here</a>.
         </div>
-        
-        <label for="contactInfo">Contact Phone/WhatsApp (Public):</label>
-        <input type="text" id="contactInfo" name="contactInfo" required>
-
-        <button type="submit" class="btn-primary">Sign Up and Start 7-Day Trial</button>
     </form>
-    <p>Already registered? <a href="/login">Log In</a></p>
 </div>
 
 <script>
-    /**
-     * Toggles the visibility of the new category text input based on the dropdown selection.
-     */
-    function checkCategory(selectElement) {
-        const container = document.getElementById('newCategoryContainer');
-        const newCategoryInput = document.getElementById('newCategory');
-
-        if (selectElement.value === 'other') {
-            container.style.display = 'block';
-            newCategoryInput.setAttribute('required', 'required');
+    function toggleNewCategoryField() {
+        const categorySelect = document.getElementById('category');
+        const newCategoryGroup = document.getElementById('newCategoryGroup');
+        
+        if (categorySelect.value === 'other') {
+            newCategoryGroup.classList.remove('hidden');
         } else {
-            container.style.display = 'none';
-            newCategoryInput.removeAttribute('required');
-            newCategoryInput.value = ''; 
+            newCategoryGroup.classList.add('hidden');
         }
     }
+    
+    // NEW JAVASCRIPT: Converts file to Base64 and updates preview
+    function previewImage(event) {
+        const file = event.target.files[0];
+        const reader = new FileReader();
+        const preview = document.getElementById('imagePreview');
+        // This is the hidden input field that replaces the URL
+        const hiddenInput = document.getElementById('profilePictureData'); 
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const categorySelect = document.getElementById('category');
-        if (categorySelect) {
-             checkCategory(categorySelect);
+        if (file) {
+            reader.onloadend = function () {
+                // Set the Base64 string (data URL) in the hidden input
+                hiddenInput.value = reader.result; 
+                
+                // Update the preview image source
+                preview.src = reader.result;
+                preview.classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
+        } else {
+            preview.src = "";
+            preview.classList.add('hidden');
+            hiddenInput.value = "";
         }
-    });
+    }
 </script>
 
-<%- include('partials/footer') %>
+<style>
+    /* Styling for registration page */
+    .auth-container {
+        max-width: 600px;
+        margin: 3rem auto;
+        padding: 2.5rem;
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.08);
+        font-family: Arial, sans-serif;
+    }
+
+    .auth-container h2 {
+        color: #1a1a40;
+        font-weight: 700;
+        font-size: 2rem;
+        text-align: center;
+        margin-bottom: 0.5rem;
+    }
+    
+    .auth-container .subtitle {
+        color: #6c757d;
+        text-align: center;
+        margin-bottom: 2rem;
+    }
+
+    .form-section {
+        padding: 1.5rem;
+        margin-bottom: 2rem;
+        border: 1px solid #e0e0e0;
+        border-radius: 8px;
+    }
+
+    .form-section h3 {
+        color: #434375;
+        font-size: 1.25rem;
+        margin-top: 0;
+        margin-bottom: 1.5rem;
+        border-bottom: 1px dashed #e0e0e0;
+        padding-bottom: 10px;
+    }
+
+    .form-group {
+        margin-bottom: 1.5rem;
+    }
+
+    .form-group label {
+        display: block;
+        font-weight: 600;
+        color: #1a1a40;
+        margin-bottom: 8px;
+        font-size: 0.95rem;
+    }
+    
+    .form-group label i {
+        margin-right: 8px;
+        color: #8a2be2;
+    }
+
+    input[type="email"], input[type="password"], input[type="text"], input[type="url"], select, textarea {
+        width: 100%;
+        padding: 12px;
+        border: 1px solid #d1d5db;
+        border-radius: 6px;
+        font-size: 1rem;
+        box-sizing: border-box;
+    }
+    
+    input[type="file"] {
+        padding: 12px 0; /* Adjust padding for file input */
+    }
+    
+    textarea {
+        resize: vertical;
+        min-height: 80px;
+    }
+
+    .help-text {
+        display: block;
+        margin-top: 5px;
+        font-size: 0.8rem;
+        color: #888;
+    }
+    
+    /* NEW: Styling for image preview */
+    .image-preview-style {
+        max-width: 100px;
+        max-height: 100px;
+        margin-top: 10px;
+        border-radius: 50%; /* Make it circular */
+        object-fit: cover;
+        border: 3px solid #434375;
+    }
+
+    .hidden {
+        display: none !important;
+    }
+
+    .btn-primary {
+        width: 100%;
+        padding: 15px 0;
+        background-color: #1a1a40;
+        border: none;
+        border-radius: 8px;
+        color: white;
+        font-weight: 700;
+        font-size: 1.1rem;
+        cursor: pointer;
+        transition: background-color 0.3s;
+    }
+    
+    .btn-primary:hover {
+        background-color: #434375;
+    }
+    
+    .btn-primary i {
+        margin-right: 10px;
+    }
+
+    .auth-footer {
+        text-align: center;
+        margin-top: 20px;
+        font-size: 0.95rem;
+        color: #6c757d;
+    }
+    
+    .auth-footer a {
+        color: #434375;
+        font-weight: 600;
+        text-decoration: none;
+    }
+    
+    .auth-footer a:hover {
+        text-decoration: underline;
+    }
+
+    /* Alerts */
+    .alert {
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1.5rem;
+        font-weight: 500;
+        text-align: left;
+    }
+    .alert.danger { 
+        background-color: #f8d7da; 
+        color: #842029; 
+    }
+</style>
+
+<%- include('./partials/footer') %>
