@@ -190,7 +190,7 @@ app.get('/provider/profile', isLoggedIn, async (req, res) => {
     }
 });
 
-// 5.6 PROVIDER EDIT PROFILE (GET) - NEW
+// 5.6 PROVIDER EDIT PROFILE (GET) 
 app.get('/provider/edit', isLoggedIn, async (req, res) => {
     try {
         const provider = await User.findById(req.session.userId);
@@ -213,7 +213,7 @@ app.get('/provider/edit', isLoggedIn, async (req, res) => {
     }
 });
 
-// 5.7 PROVIDER UPDATE PROFILE (POST) - NEW
+// 5.7 PROVIDER UPDATE PROFILE (POST) 
 app.post('/provider/edit', isLoggedIn, async (req, res) => {
     const { name, category, contactInfo, newCategory } = req.body;
     let finalCategory = category;
@@ -250,7 +250,7 @@ app.get('/subscribe', isLoggedIn, (req, res) => {
 });
 
 
-// 5.9 SEARCH ROUTES
+// 5.9 SEARCH ROUTES -- UPDATED FOR DYNAMIC CATEGORIES
 app.get('/search', async (req, res) => {
     const { q, category } = req.query;
     let query = { isSubscribed: true }; 
@@ -269,21 +269,31 @@ app.get('/search', async (req, res) => {
     }
 
     try {
+        // 1. Fetch all unique categories from subscribed users
+        const uniqueCategories = await User.distinct('category', { isSubscribed: true });
+        
+        // 2. Perform the main search query
         const providers = await User.find(query);
+        
+        // 3. Render the view, passing the unique categories
         res.render('search-results', { 
             title: 'Search Results', 
             providers, 
             q: q || '', 
-            category: category || '' 
+            category: category || '',
+            uniqueCategories // <-- PASSING NEW DATA
         });
     } catch (error) {
         console.error('Search Error:', error);
+        // Ensure error rendering passes an empty array and the categories to prevent crash
+        const uniqueCategories = []; 
         res.render('search-results', { 
             title: 'Search Results', 
             providers: [], 
             q: q || '', 
             category: category || '', 
-            error: 'Failed to perform search.' 
+            error: 'Failed to perform search.',
+            uniqueCategories
         });
     }
 });
