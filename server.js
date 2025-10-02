@@ -95,6 +95,8 @@ app.post('/register', async (req, res) => {
         });
 
         await newUser.save();
+        // DEBUG: Confirm user creation
+        console.log(`[REGISTER SUCCESS] New user created with ID: ${newUser._id}`);
 
         req.session.userId = newUser._id;
         res.redirect('/provider/profile'); 
