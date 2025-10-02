@@ -99,7 +99,16 @@ app.post('/register', async (req, res) => {
         console.log(`[REGISTER SUCCESS] New user created with ID: ${newUser._id}`);
 
         req.session.userId = newUser._id;
-        res.redirect('/provider/profile'); 
+        // The redirect here is generally okay because the user is new, but we will apply the fix pattern here too for consistency.
+        req.session.save(err => {
+            if (err) {
+                console.error('Session Save Error on Register:', err);
+                // Fallback to anonymous session creation if save fails
+                return res.redirect('/provider/profile'); 
+            }
+            res.redirect('/provider/profile'); 
+        });
+
     } catch (error) {
         console.error('Registration Error:', error);
         res.render('register', { error: 'Registration failed. Email may already be in use.', title: 'Register' });
@@ -133,9 +142,17 @@ app.post('/login', async (req, res) => {
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
 
-        // Success: set session and redirect
+        // Success: set session ID
         req.session.userId = user._id;
-        res.redirect('/provider/profile'); 
+        
+        // CRITICAL FIX: Explicitly save the session before redirecting
+        req.session.save(err => {
+            if (err) {
+                console.error('Session Save Error on Login:', err);
+                return res.render('login', { error: 'Failed to establish session. Try again.', title: 'Login' });
+            }
+            res.redirect('/provider/profile'); 
+        });
 
     } catch (error) {
         console.error('Login Error:', error);
