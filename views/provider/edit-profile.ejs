@@ -1,0 +1,80 @@
+<!-- views/provider/edit-profile.ejs -->
+<%- include('../partials/head', { title: title }) %>
+
+<div class="form-container">
+    <h2>Edit Service Profile</h2>
+    <p class="subtitle">Update your business name, category, and contact information.</p>
+    
+    <% if (error) { %>
+        <p class="error-message"><%= error %></p>
+    <% } %>
+    
+    <form method="POST" action="/provider/edit">
+        <label for="name">Business Name / Name:</label>
+        <input type="text" id="name" name="name" value="<%= provider.name %>" required>
+
+        <label for="category">Service Category:</label>
+        <select id="category" name="category" required onchange="checkCategory(this)">
+            <option value="">-- Select or Add New --</option>
+            <!-- Check if current category matches a predefined option -->
+            <option value="plumbing" <%= currentCategory === 'plumbing' ? 'selected' : '' %>>Plumbing</option>
+            <option value="electrician" <%= currentCategory === 'electrician' ? 'selected' : '' %>>Electrician</option>
+            <option value="gardening" <%= currentCategory === 'gardening' ? 'selected' : '' %>>Gardening</option>
+            <option value="cleaning" <%= currentCategory === 'cleaning' ? 'selected' : '' %>>Cleaning</option>
+            <option value="other" id="other-option" <%= !['plumbing', 'electrician', 'gardening', 'cleaning'].includes(currentCategory) ? 'selected' : '' %>>Other (Specify Below)</option>
+        </select>
+        
+        <!-- Conditional Input Field for New Category -->
+        <div id="newCategoryContainer" style="display:none; margin-top: 10px;">
+            <label for="newCategory">Enter New Category Name:</label>
+            <input type="text" id="newCategory" name="newCategory" placeholder="e.g., Drone Photography">
+        </div>
+        
+        <label for="contactInfo">Contact Phone/WhatsApp (Public):</label>
+        <input type="text" id="contactInfo" name="contactInfo" value="<%= provider.contactInfo %>" required>
+
+        <button type="submit" class="btn-primary">Save Changes</button>
+    </form>
+    <p><a href="/provider/profile">Cancel and return to Profile</a></p>
+</div>
+
+<script>
+    function checkCategory(selectElement) {
+        const container = document.getElementById('newCategoryContainer');
+        const newCategoryInput = document.getElementById('newCategory');
+        const otherOption = document.getElementById('other-option');
+
+        // Check if the current value is 'other' OR if no predefined option matched (which defaults to 'other' selection logic)
+        const isOther = selectElement.value === 'other';
+
+        if (isOther) {
+            container.style.display = 'block';
+            newCategoryInput.setAttribute('required', 'required');
+            
+            // If the current category is NOT a predefined one (i.e., it's a custom category saved previously)
+            // pre-populate the 'newCategory' field with the existing custom category name.
+            const predefinedCategories = ['plumbing', 'electrician', 'gardening', 'cleaning'];
+            const currentCategorySaved = "<%= provider.category %>".toLowerCase();
+            
+            if (!predefinedCategories.includes(currentCategorySaved)) {
+                 newCategoryInput.value = "<%= provider.category %>"; // Display the saved name
+            } else {
+                 newCategoryInput.value = ''; // Clear if they switch from a predefined option to 'Other'
+            }
+
+        } else {
+            container.style.display = 'none';
+            newCategoryInput.removeAttribute('required');
+            newCategoryInput.value = ''; 
+        }
+    }
+
+    document.addEventListener('DOMContentLoaded', () => {
+        const categorySelect = document.getElementById('category');
+        if (categorySelect) {
+             checkCategory(categorySelect);
+        }
+    });
+</script>
+
+<%- include('../partials/footer') %>

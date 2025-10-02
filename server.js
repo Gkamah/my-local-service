@@ -15,7 +15,6 @@ const app = express();
 const PORT = process.env.PORT || 3000; 
 
 // CRITICAL FIX FOR DEPLOYED SESSIONS: Trust proxy
-// This is necessary when running behind a reverse proxy like Render
 app.set('trust proxy', 1);
 
 // === 2. DATABASE CONNECTION ===
@@ -39,7 +38,6 @@ app.use(session({
     cookie: { 
         secure: process.env.NODE_ENV === 'production', 
         maxAge: 1000 * 60 * 60 * 24, // 24 hours
-        // FIX: Add sameSite to ensure cookie is sent by browser after redirect
         sameSite: 'Lax' 
     } 
 }));
@@ -56,11 +54,9 @@ app.use((req, res, next) => {
 
 // === 4. AUTH MIDDLEWARE === 
 function isLoggedIn(req, res, next) {
-    // If the session ID exists, proceed to the route handler
     if (req.session.userId) {
         return next();
     }
-    // Otherwise, redirect to login
     req.session.error = 'You must be logged in to access that page.';
     res.redirect('/login');
 }
@@ -88,7 +84,6 @@ app.post('/register', async (req, res) => {
     }
 
     try {
-        // HASHING STEP: Explicitly setting salt rounds to 10 for consistency
         const hashedPassword = await bcrypt.hash(password, 10);
         
         const newUser = new User({
@@ -103,11 +98,8 @@ app.post('/register', async (req, res) => {
         });
 
         await newUser.save();
-        // DEBUG: Confirm user creation
-        console.log(`[REGISTER SUCCESS] New user created with ID: ${newUser._id}`);
 
         req.session.userId = newUser._id;
-        // Explicitly save the session before redirecting
         req.session.save(err => {
             if (err) {
                 console.error('Session Save Error on Register:', err);
@@ -133,26 +125,18 @@ app.post('/login', async (req, res) => {
     try {
         const user = await User.findOne({ email });
 
-        // DEBUG 1: Check if the user was found
         if (!user) {
-            console.log(`[LOGIN FAILED] User not found for email: ${email}`);
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
         
-        // AWAITED PASSWORD COMPARISON
         const passwordMatch = await bcrypt.compare(password, user.password);
-
-        // DEBUG 2: Log the comparison result to the server console/logs
-        console.log(`[LOGIN DEBUG] Comparison result for ${email}: ${passwordMatch}`);
 
         if (!passwordMatch) {
             return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
 
-        // Success: set session ID
         req.session.userId = user._id;
         
-        // CRITICAL FIX: Explicitly save the session before redirecting
         req.session.save(err => {
             if (err) {
                 console.error('Session Save Error on Login:', err);
@@ -206,14 +190,67 @@ app.get('/provider/profile', isLoggedIn, async (req, res) => {
     }
 });
 
+// 5.6 PROVIDER EDIT PROFILE (GET) - NEW
+app.get('/provider/edit', isLoggedIn, async (req, res) => {
+    try {
+        const provider = await User.findById(req.session.userId);
+        if (!provider) {
+            req.session.error = 'User not found.';
+            return res.redirect('/provider/profile');
+        }
+        // Format category for consistent comparison in the select dropdown
+        const currentCategory = provider.category.toLowerCase();
+        
+        res.render('provider/edit-profile', { 
+            title: 'Edit Profile', 
+            provider: provider,
+            currentCategory: currentCategory
+        });
+    } catch (error) {
+        console.error('Edit Profile Load Error:', error);
+        req.session.error = 'Error loading edit form.';
+        res.redirect('/provider/profile');
+    }
+});
 
-// 5.6 SUBSCRIPTION ROUTE 
+// 5.7 PROVIDER UPDATE PROFILE (POST) - NEW
+app.post('/provider/edit', isLoggedIn, async (req, res) => {
+    const { name, category, contactInfo, newCategory } = req.body;
+    let finalCategory = category;
+
+    // Handle "Other" category update logic
+    if (category === 'other' && newCategory && newCategory.trim().length > 0) {
+        finalCategory = newCategory.trim().charAt(0).toUpperCase() + newCategory.trim().slice(1).toLowerCase();
+    } else if (category === 'other' && (!newCategory || newCategory.trim().length === 0)) {
+        req.session.error = 'Please specify the new category.';
+        return res.redirect('/provider/edit');
+    }
+
+    try {
+        await User.findByIdAndUpdate(req.session.userId, {
+            name,
+            category: finalCategory,
+            contactInfo
+        }, { new: true, runValidators: true });
+
+        req.session.message = 'Profile updated successfully!';
+        res.redirect('/provider/profile');
+
+    } catch (error) {
+        console.error('Profile Update Error:', error);
+        // Check for MongoDB validation errors if necessary, but a generic error works here
+        req.session.error = 'Failed to update profile due to a server error.';
+        res.redirect('/provider/edit');
+    }
+});
+
+// 5.8 SUBSCRIPTION ROUTE 
 app.get('/subscribe', isLoggedIn, (req, res) => {
     res.render('subscribe', { title: 'Subscribe & Pay' });
 });
 
 
-// 5.7 SEARCH ROUTES
+// 5.9 SEARCH ROUTES
 app.get('/search', async (req, res) => {
     const { q, category } = req.query;
     let query = { isSubscribed: true }; 
@@ -251,12 +288,12 @@ app.get('/search', async (req, res) => {
     }
 });
 
-// 5.8 FORGOT PASSWORD - Form
+// 5.10 FORGOT PASSWORD - Form
 app.get('/forgot-password', (req, res) => {
     res.render('forgot-password', { title: 'Forgot Password', error: null, message: null });
 });
 
-// 5.9 FORGOT PASSWORD - Process (Placeholder for sending email/token)
+// 5.11 FORGOT PASSWORD - Process (Placeholder for sending email/token)
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     
@@ -267,8 +304,6 @@ app.post('/forgot-password', async (req, res) => {
             req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
             return res.redirect('/forgot-password');
         }
-        
-        // --- REAL-WORLD: Generate Token, Save to DB, Send Email ---
         
         console.log(`[PASSWORD RESET] Token link GENERATED for: ${email}`);
         req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
