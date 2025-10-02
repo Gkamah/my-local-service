@@ -15,7 +15,8 @@
 
     <div class="pricing-card">
         <h3>Pro Provider Plan</h3>
-        <p class="price-tag">$19.99 / Month</p>
+        <!-- Price correctly displayed in KES -->
+        <p class="price-tag">KES 2,800 / Month</p>
         
         <ul class="feature-list">
             <li><i class="fas fa-check-circle"></i> Full profile visibility in Search Results.</li>
@@ -26,16 +27,16 @@
         <div class="current-status-box">
             <% if (provider.isSubscribed) { %>
                 <div class="status-active"><i class="fas fa-star"></i> Status: **ACTIVE SUBSCRIBER**</div>
-                <p>Thank you for being a subscriber. No further action needed.</p>
+                <p>As an active subscriber, your profile is searchable.</p>
                 <a href="/provider/profile" class="btn-secondary back-btn">Return to Profile</a>
             <% } else { %>
                 <div class="status-inactive"><i class="fas fa-exclamation-triangle"></i> Status: **TRIAL/EXPIRED**</div>
                 <p>Your profile is currently hidden. Activate your subscription now!</p>
                 
-                <!-- Placeholder Form for Subscription Activation -->
+                <!-- Button text correctly displayed in KES -->
                 <form method="POST" action="/subscribe/activate">
                     <button type="submit" class="btn-primary subscribe-btn">
-                        <i class="fas fa-lock"></i> Activate Subscription Now
+                        <i class="fas fa-lock"></i> Activate Subscription Now (KES 2,800)
                     </button>
                 </form>
             <% } %>
@@ -152,7 +153,7 @@
         margin-top: 1rem;
     }
     .back-btn:hover {
-        background-color: #6c757d;
+        background-color: #5a6268;
     }
 
     /* General Alerts */
