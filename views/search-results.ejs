@@ -91,15 +91,22 @@
                             
                             <% 
                                 const defaultImage = 'https://placehold.co/50x50/5B5E63/ffffff?text=' + encodeURIComponent(provider.name.charAt(0).toUpperCase());
-                                const imageUrl = provider.profilePictureUrl ? `data:image/png;base64,${provider.profilePictureUrl}` : defaultImage;
+                                // Small image logic: Ensure Base64 prefix is used
+                                let smallImageUrl = defaultImage;
+                                if (provider.profilePictureUrl && typeof provider.profilePictureUrl === 'string' && provider.profilePictureUrl.length > 0) {
+                                    smallImageUrl = provider.profilePictureUrl.startsWith('data:image') 
+                                        ? provider.profilePictureUrl 
+                                        : `data:image/png;base64,${provider.profilePictureUrl}`;
+                                }
                             %>
-                            <img src="<%= imageUrl %>" alt="<%= provider.name %>" 
+                            <img src="<%= smallImageUrl %>" alt="<%= provider.name %>" 
                                 class="profile-pic-small rounded-full flex-shrink-0"
                                 onerror="this.onerror=null;this.src='<%= defaultImage %>';">
                             
                             <div class="flex-grow">
                                 <h2 class="text-xl font-bold text-gray-900"><%= provider.name %></h2>
                                 <p class="text-indigo-600 font-medium"><%= provider.category %></p>
+                                <!-- Description: ensuring visibility -->
                                 <p class="text-gray-500 text-sm truncate"><%= provider.description || 'No description provided.' %></p>
                             </div>
                         </div>
@@ -130,10 +137,18 @@
             const nameInitial = provider.name.charAt(0).toUpperCase();
             const defaultImage = `https://placehold.co/100x100/5B5E63/ffffff?text=${nameInitial}`;
             
-            if (provider.profilePictureUrl) {
-                // Ensure Base64 image data is prefixed correctly
-                return `data:image/png;base64,${provider.profilePictureUrl}`;
+            const imageData = provider.profilePictureUrl;
+
+            // FIX: Robust check for image data presence and formatting
+            if (typeof imageData === 'string' && imageData.length > 0) {
+                // If the string starts with 'data:image', it's already a full data URI.
+                if (imageData.startsWith('data:image')) {
+                    return imageData;
+                }
+                // Otherwise, assume it is a raw Base64 string and prefix it.
+                return `data:image/png;base64,${imageData}`;
             }
+
             return defaultImage;
         }
 
