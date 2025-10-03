@@ -9,15 +9,25 @@
             
             <div class="flex-shrink-0 mb-6 md:mb-0 md:mr-8">
                 <!-- Profile Picture Display Logic -->
-                <% if (provider.profilePictureUrl && provider.profilePictureUrl.startsWith('data:image')) { %>
+                <% 
+                    // Sanitize the URL to ensure it has the necessary prefix for Base64 data
+                    let finalProfileUrl = provider.profilePictureUrl;
+                    if (finalProfileUrl && finalProfileUrl.length > 0 && !finalProfileUrl.startsWith('data:image')) {
+                        // Assuming JPEG/PNG if it's a raw Base64 string
+                        finalProfileUrl = `data:image/jpeg;base64,${finalProfileUrl}`;
+                    }
+                %>
+
+                <% if (finalProfileUrl && finalProfileUrl.startsWith('data:image')) { %>
                     <img 
-                        src="<%= provider.profilePictureUrl %>" 
+                        src="<%= finalProfileUrl %>" 
                         alt="<%= provider.name %> Profile Picture" 
-                        class="w-32 h-32 rounded-full object-cover border-4 border-indigo-500 shadow-lg"
+                        class="w-32 h-32 rounded-full object-cover border-4 border-indigo-600 shadow-xl transition transform hover:scale-105 duration-300"
+                        onerror="this.onerror=null; this.src='https://placehold.co/128x128/8a2be2/ffffff?text=P'"
                     >
                 <% } else { %>
-                    <!-- Default Initial Icon -->
-                    <div class="w-32 h-32 rounded-full bg-indigo-600 flex items-center justify-center text-6xl font-extrabold text-white shadow-lg">
+                    <!-- Default Initial Icon: slightly darker background for better contrast -->
+                    <div class="w-32 h-32 rounded-full bg-indigo-700 flex items-center justify-center text-6xl font-extrabold text-white shadow-xl border-4 border-indigo-300">
                         <%= provider.name.charAt(0).toUpperCase() %>
                     </div>
                 <% } %>
@@ -31,8 +41,9 @@
                 <p class="text-xl text-indigo-600 font-semibold mb-3">
                     Service: <%= provider.category %>
                 </p>
+                <!-- FIX: Ensuring h-5 w-5 is respected for the icon size -->
                 <div class="flex items-center justify-center md:justify-start text-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-500 flex-shrink-0" viewBox="0 0 20 20" fill="currentColor">
                         <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.772-1.549a1 1 0 011.06-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
                     </svg>
                     <span>Contact: <%= provider.contactInfo %></span>
@@ -44,26 +55,31 @@
         </div>
 
         <!-- Description Section (The main content for site visitors) -->
-        <h2 class="text-2xl font-bold text-gray-800 mb-4">
+        <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
             About My Services
         </h2>
         
-        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[150px]">
+        <div class="bg-white p-6 rounded-xl border border-gray-200 min-h-[150px] shadow-inner">
             <% if (provider.description && provider.description.length > 0) { %>
                 <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">
                     <!-- The whitespace-pre-wrap ensures line breaks from the textarea are respected -->
                     <%= provider.description %>
                 </p>
             <% } else { %>
-                <p class="text-gray-500 italic">
-                    This provider has not yet added a detailed description of their services. Please contact them directly using the information above.
-                </p>
+                <div class="text-center p-8 text-gray-500 border border-dashed border-gray-300 rounded-lg">
+                    <p class="font-semibold">
+                        Detailed description coming soon.
+                    </p>
+                    <p class="text-sm mt-1">
+                        This provider has not yet added a detailed description of their services.
+                    </p>
+                </div>
             <% } %>
         </div>
 
         <!-- Back Button -->
         <div class="mt-8 text-center">
-             <a href="/search" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition duration-150">
+             <a href="/search" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-lg text-white bg-indigo-600 hover:bg-indigo-700 transition duration-150 transform hover:translate-y-0.5">
                 &larr; Back to Search Results
             </a>
         </div>
