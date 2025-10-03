@@ -1,343 +1,410 @@
-// All necessary imports
+// server.js
 const express = require('express');
 const mongoose = require('mongoose');
+const dotenv = require('dotenv');
 const session = require('express-session');
-const bcrypt = require('bcrypt');
 const path = require('path');
+const bcrypt = require('bcrypt');
+const User = require('./models/User'); 
 
-const app = express();
-const PORT = 3000;
+// Load environment variables (MUST be the first thing!)
+dotenv.config();
 
-// Middleware for parsing request body and session management
-app.use(express.urlencoded({ extended: true }));
-// CRITICAL FIX: Increase limit for Base64 image data to prevent server crash on large uploads
-app.use(express.json({ limit: '50mb' })); 
+// === 1. INITIALIZE APP & PORT ===
+const app = express(); 
+const PORT = process.env.PORT || 3000; 
 
-// 1. Database Connection (using MONGODB_URI)
-const MONGODB_URI = process.env.MONGODB_URI; 
+// Base categories to ensure they are always available in search filters
+const baseCategories = ['Driver', 'Plumbing', 'Electrician', 'Gardening', 'Cleaning'];
 
-// Warning about session store in production
-console.warn("WARNING: Using default MemoryStore for sessions. This is not suitable for production and will cause issues.");
-
-// CRITICAL FIX: Removed the aggressive process.exit(1) check. 
-// This allows Mongoose to attempt the connection, relying on the environment 
-// variable being set in the Render configuration.
-mongoose.connect(MONGODB_URI)
+// === 2. DATABASE CONNECTION ===
+mongoose.connect(process.env.DATABASE_URL)
     .then(() => console.log('MongoDB connected successfully'))
-    .catch(err => console.error('MongoDB connection error:', err));
+    .catch(err => console.error('DB Connection Error:', err));
 
-// 2. Mongoose Schemas and Models
-const providerSchema = new mongoose.Schema({
-    name: { type: String, required: true },
-    email: { type: String, required: true, unique: true },
-    password: { type: String, required: true },
-    contactInfo: String,
-    category: { type: String, default: 'General' },
-    profilePictureUrl: String, // Stores the Base64 image data
-    description: String, // Stores the service description
-    createdAt: { type: Date, default: Date.now }
-});
+// === 3. MIDDLEWARE & VIEW ENGINE SETUP ===
 
-const Provider = mongoose.model('Provider', providerSchema);
+// Trust proxy for secure cookies when running behind services like Render
+app.set('trust proxy', 1);
 
-// 3. Configure Express
-app.set('view engine', 'ejs');
+app.set('view engine', 'ejs'); 
 app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
-// Session configuration
+// Middleware for parsing application/json and application/x-www-form-urlencoded
+app.use(express.json({ limit: '5mb' })); // Increased limit for Base64 image data
+app.use(express.urlencoded({ extended: true, limit: '5mb' })); // Increased limit
+
+// Express Session Middleware
 app.use(session({
-    secret: 'mysecretkeyforlocalservice',
+    secret: process.env.SESSION_SECRET,
     resave: false,
     saveUninitialized: false,
-    cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24 hours
+    cookie: { 
+        secure: process.env.NODE_ENV === 'production', 
+        maxAge: 1000 * 60 * 60 * 24, // 24 hours
+        sameSite: 'Lax' // Necessary for cross-site cookie behavior on redirects
+    } 
 }));
 
-// --- BEGIN Flash Message Replacement ---
-// Global middleware to handle custom flash messages using session
+// Global locals for EJS templates
 app.use((req, res, next) => {
-    // 1. Transfer flash messages from session to res.locals
-    res.locals.success_msg = req.session.success_msg;
-    res.locals.error_msg = req.session.error_msg;
-    
-    // 2. Clear flash messages in session immediately after transfer
-    delete req.session.success_msg;
-    delete req.session.error_msg;
-
-    res.locals.isLoggedIn = req.session.userId ? true : false;
-    
-    // 3. Helper function to set flash messages
-    req.flash = (type, message) => {
-        if (type === 'success') {
-            req.session.success_msg = message;
-        } else if (type === 'error') {
-            req.session.error_msg = message;
-        }
-    };
-
+    res.locals.isLoggedIn = !!req.session.userId;
+    res.locals.error = req.session.error; 
+    res.locals.message = req.session.message; 
+    delete req.session.error; 
+    delete req.session.message;
     next();
 });
-// --- END Flash Message Replacement ---
 
-// Middleware to check if the user is authenticated (logged in)
-const ensureAuthenticated = (req, res, next) => {
+// === 4. AUTH MIDDLEWARE === 
+function isLoggedIn(req, res, next) {
     if (req.session.userId) {
         return next();
     }
-    req.flash('error', 'Please log in to view this resource.');
+    req.session.error = 'You must be logged in to access that page.';
     res.redirect('/login');
-};
+}
 
-// 4. Basic Routes
+// === 5. CORE ROUTES ===
 
-// 4.1 HOME PAGE (GET)
+// 5.1 HOME/LANDING PAGE
 app.get('/', (req, res) => {
-    res.render('index', { title: 'Local Service Finder' });
+    res.render('index', { title: 'Home' }); 
 });
 
-// 4.2 REGISTER (GET)
+// 5.2 REGISTRATION ROUTES
 app.get('/register', (req, res) => {
-    res.render('register', { title: 'Register' });
+    res.render('register', { title: 'Register as Provider', error: null, baseCategories: baseCategories });
 });
 
-// 4.3 REGISTER (POST)
 app.post('/register', async (req, res) => {
-    const { name, email, password } = req.body;
+    const { email, password, name, category, contactInfo, newCategory, profilePictureData, description } = req.body;
+    
+    let finalCategory = category;
+    if (category === 'other' && newCategory && newCategory.trim().length > 0) {
+        finalCategory = newCategory.trim().charAt(0).toUpperCase() + newCategory.trim().slice(1).toLowerCase();
+    } else if (category === 'other' && (!newCategory || newCategory.trim().length === 0)) {
+         return res.render('register', { error: 'Please specify the new category.', title: 'Register', baseCategories: baseCategories });
+    }
+
     try {
-        let provider = await Provider.findOne({ email });
-        if (provider) {
-            req.flash('error', 'Email already registered.');
-            return res.render('register', { title: 'Register', name, email });
-        }
-
         const hashedPassword = await bcrypt.hash(password, 10);
-
-        provider = new Provider({
-            name,
+        
+        const newUser = new User({
             email,
             password: hashedPassword,
-            category: 'General', // Default category on registration
-            contactInfo: '' 
+            name,
+            category: finalCategory,
+            contactInfo,
+            profilePictureUrl: profilePictureData || '',
+            description: description || '',
+            role: 'provider',
+            isSubscribed: false,
+            trialStartDate: new Date()
         });
 
-        await provider.save();
-        req.flash('success', 'Registration successful. You can now log in.');
-        res.redirect('/login');
+        await newUser.save();
 
+        req.session.userId = newUser._id;
+        req.session.save(err => {
+            if (err) console.error('Session save error after register:', err);
+            res.redirect('/provider/profile'); 
+        });
     } catch (error) {
-        console.error('Registration error:', error);
-        req.flash('error', 'Server error during registration.');
-        res.render('register', { title: 'Register', name, email });
+        console.error('Registration Error:', error);
+        res.render('register', { error: 'Registration failed. Email may already be in use.', title: 'Register', baseCategories: baseCategories });
     }
 });
 
-// 4.4 LOGIN (GET)
+
+// 5.3 LOGIN ROUTES
 app.get('/login', (req, res) => {
-    res.render('login', { title: 'Login' });
+    res.render('login', { title: 'Provider Login', error: null });
 });
 
-// 4.5 LOGIN (POST)
 app.post('/login', async (req, res) => {
     const { email, password } = req.body;
     try {
-        const provider = await Provider.findOne({ email });
-        if (!provider) {
-            req.flash('error', 'Invalid credentials.');
-            return res.render('login', { title: 'Login', email });
+        const user = await User.findOne({ email });
+
+        if (!user) {
+            return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
+        }
+        
+        const passwordMatch = await bcrypt.compare(password, user.password);
+
+        if (!passwordMatch) {
+            return res.render('login', { error: 'Invalid email or password.', title: 'Login' });
         }
 
-        const isMatch = await bcrypt.compare(password, provider.password);
-        if (!isMatch) {
-            req.flash('error', 'Invalid credentials.');
-            return res.render('login', { title: 'Login', email });
-        }
-
-        req.session.userId = provider._id;
-        req.flash('success', 'Login successful!');
-        res.redirect('/provider/profile');
+        // Success: set session and redirect
+        req.session.userId = user._id;
+        
+        // CRITICAL FIX: Explicitly save session before redirecting
+        req.session.save(err => {
+            if (err) console.error('Session save error after login:', err);
+            res.redirect('/provider/profile'); 
+        });
 
     } catch (error) {
-        console.error('Login error:', error);
-        req.flash('error', 'Server error during login.');
-        res.render('login', { title: 'Login', email });
+        console.error('Login Error:', error);
+        res.render('login', { error: 'An internal error occurred during login.', title: 'Login' });
     }
 });
 
-// 4.6 LOGOUT (GET)
+// 5.4 LOGOUT ROUTE
 app.get('/logout', (req, res) => {
     req.session.destroy(err => {
         if (err) {
-            return res.redirect('/');
+            console.error('Logout Error:', err);
+            return res.status(500).send('Could not log out.');
         }
-        res.clearCookie('connect.sid');
-        res.redirect('/login');
+        res.redirect('/');
     });
 });
 
-// 5. Provider Dashboard Routes (Authenticated)
 
-// 5.1 PROVIDER DASHBOARD (GET)
-app.get('/provider/profile', ensureAuthenticated, async (req, res) => {
+// 5.5a PROVIDER PROFILE (SECURE ROUTE - Dashboard)
+app.get('/provider/profile', isLoggedIn, async (req, res) => {
     try {
-        const provider = await Provider.findById(req.session.userId);
+        const provider = await User.findById(req.session.userId);
+
         if (!provider) {
-            req.flash('error', 'Profile not found. Please log in again.');
-            return res.redirect('/logout');
+            console.warn(`Session ID found but user not in DB: ${req.session.userId}`);
+            return req.session.destroy(() => res.redirect('/login'));
         }
+        
+        const ONE_WEEK_MS = 7 * 24 * 60 * 60 * 1000;
+        const trialEndDate = new Date(provider.trialStartDate.getTime() + ONE_WEEK_MS);
+        const now = new Date();
+        
+        const isTrialActive = !provider.isSubscribed && now < trialEndDate;
+        let daysLeft = 0;
+        if (isTrialActive) {
+            daysLeft = Math.ceil((trialEndDate.getTime() - now.getTime()) / (1000 * 60 * 60 * 24));
+        }
+
         res.render('provider/profile', { 
-            title: 'Provider Dashboard', 
-            provider: provider 
+            title: 'My Dashboard', 
+            provider,
+            isTrialActive,
+            daysLeft 
         });
     } catch (error) {
-        console.error('Error fetching provider profile:', error);
-        // Destroy session and redirect if the ID is invalid (e.g., Mongoose casting error)
-        req.session.destroy(err => {
-            if (err) console.error('Error destroying session:', err);
-            res.redirect('/login');
-        });
+        // Catch Mongoose CastError (invalid ID format) or other DB errors
+        console.error('Profile Load Error:', error);
+        req.session.destroy(() => res.redirect('/login')); 
     }
 });
 
-// 5.5 PROVIDER EDIT PROFILE (GET)
-app.get('/provider/edit', ensureAuthenticated, async (req, res) => {
+// 5.5b PROVIDER EDIT PROFILE (GET)
+app.get('/provider/edit', isLoggedIn, async (req, res) => {
     try {
-        const provider = await Provider.findById(req.session.userId);
+        const provider = await User.findById(req.session.userId);
 
         if (!provider) {
-            req.flash('error', 'Profile not found. Please log in again.');
-            return res.redirect('/logout');
+            console.warn(`Session ID found but user not in DB: ${req.session.userId}`);
+            return req.session.destroy(() => res.redirect('/login'));
         }
+        
+        // FIX: Ensure currentCategory is defined for the EJS file
+        const currentCategory = provider.category;
 
-        // Fetch unique categories and prepend default/popular ones
-        const allCategories = await Provider.distinct('category');
-        allCategories.sort();
-
-        res.render('provider/edit-profile', {
-            title: 'Edit Profile',
-            provider: provider,
-            currentCategory: provider.category, // Pass the current category for selection
-            uniqueCategories: ['Plumbing', 'Electrician', 'Gardening', 'Cleaning', ...allCategories.filter(c => c && c.trim() !== '')],
+        res.render('provider/edit-profile', { 
+            title: 'Edit Profile', 
+            provider,
+            baseCategories: baseCategories,
+            currentCategory: currentCategory, // Passed to EJS for pre-selection
             error: null
         });
-
     } catch (error) {
-        console.error('Error rendering edit profile page:', error);
-        // This is the critical fix: If Mongoose gets a bad ID or the fetch fails, log out.
-        req.session.destroy(err => {
-            if (err) console.error('Error destroying session:', err);
-            res.redirect('/login');
-        });
+        // Catch Mongoose CastError (invalid ID format) or other DB errors
+        console.error('Edit Profile Load Error:', error);
+        // Destroy corrupted session and redirect
+        req.session.destroy(() => res.redirect('/login')); 
     }
 });
 
-
 // 5.6 PROVIDER EDIT PROFILE (POST)
-app.post('/provider/edit', ensureAuthenticated, async (req, res) => {
+app.post('/provider/edit', isLoggedIn, async (req, res) => {
+    const { name, category, contactInfo, newCategory, profilePictureData, description } = req.body;
+    
+    let finalCategory = category;
+    if (category === 'other' && newCategory && newCategory.trim().length > 0) {
+        finalCategory = newCategory.trim().charAt(0).toUpperCase() + newCategory.trim().slice(1).toLowerCase();
+    } else if (category === 'other' && (!newCategory || newCategory.trim().length === 0)) {
+        req.session.error = 'Please specify the new category.';
+        return res.redirect('/provider/edit');
+    }
+
     try {
-        // Ensure all potential fields are destructured from the request body
-        const { contactInfo, category, description, profilePictureData } = req.body;
-        const providerId = req.session.userId;
-        
-        // Build the update object
-        const updateFields = { 
-            contactInfo, 
-            category, 
-            description // Ensure description is included
-        }; 
+        // FIX: Extract and update profile picture data and description
+        const updateFields = {
+            name,
+            category: finalCategory,
+            contactInfo,
+            description: description || '',
+            // Save the Base64 string directly
+            profilePictureUrl: profilePictureData || ''
+        };
 
-        // CRITICAL FIX: Ensure the Base64 image data is handled correctly and saved
-        if (profilePictureData && profilePictureData.length > 0) {
-            // profilePictureData is the Base64 string from the frontend. We save it directly.
-            updateFields.profilePictureUrl = profilePictureData;
-        }
-
-        const updatedProvider = await Provider.findByIdAndUpdate(providerId, updateFields, { new: true, runValidators: true });
+        const updatedProvider = await User.findByIdAndUpdate(req.session.userId, updateFields, { new: true });
         
         if (!updatedProvider) {
-            req.flash('error', 'Provider profile not found during update.');
-            return res.redirect('/provider/edit');
+            req.session.error = 'User profile could not be found for update.';
+            return res.redirect('/logout');
         }
-        
-        req.flash('success', 'Profile updated successfully!');
-        res.redirect('/provider/profile');
 
+        req.session.message = 'Profile updated successfully!';
+        res.redirect('/provider/profile');
     } catch (error) {
-        console.error('Error updating provider profile:', error);
-        req.flash('error', 'Failed to update profile due to a server error.');
+        console.error('Profile Update Error:', error);
+        req.session.error = 'Failed to update profile due to an internal error.';
         res.redirect('/provider/edit');
     }
 });
 
 
-// 5.7 PUBLIC PROVIDER PROFILE (GET)
+// 5.7 SUBSCRIPTION ROUTES
+app.get('/subscribe', isLoggedIn, async (req, res) => {
+    try {
+        const provider = await User.findById(req.session.userId);
+        res.render('subscribe', { title: 'Subscribe & Pay', provider });
+    } catch (error) {
+        console.error('Subscribe page load error:', error);
+        req.session.error = 'Could not load subscription details.';
+        res.redirect('/provider/profile');
+    }
+});
+
+app.post('/subscribe/activate', isLoggedIn, async (req, res) => {
+    try {
+        const updatedProvider = await User.findByIdAndUpdate(
+            req.session.userId, 
+            { isSubscribed: true }, 
+            { new: true }
+        );
+
+        if (!updatedProvider) {
+            req.session.error = 'Subscription failed. User not found.';
+            return res.redirect('/subscribe');
+        }
+
+        req.session.message = 'Subscription activated! Your profile is now visible in search results.';
+        res.redirect('/provider/profile');
+    } catch (error) {
+        console.error('Subscription Activation Error:', error);
+        req.session.error = 'An error occurred during subscription activation.';
+        res.redirect('/subscribe');
+    }
+});
+
+
+// 5.8 SEARCH ROUTES
+app.get('/search', async (req, res) => {
+    const q = req.query.query || '';
+    const category = req.query.category || '';
+
+    let query = { isSubscribed: true }; 
+    
+    // Get all unique categories for the dropdown, ensuring base categories are always included
+    let uniqueCategories = [];
+    try {
+        const dbCategories = await User.distinct('category', { isSubscribed: true });
+        uniqueCategories = [...new Set([...baseCategories, ...dbCategories])].sort();
+    } catch (error) {
+        console.error('Failed to fetch unique categories:', error);
+        uniqueCategories = baseCategories; // Fallback
+    }
+
+    if (category && category !== 'All Categories' && uniqueCategories.includes(category)) {
+        query.category = category;
+    }
+    
+    if (q) {
+        const searchRegex = new RegExp(q, 'i');
+        query.$or = [
+            { name: searchRegex },
+            { description: searchRegex },
+            { contactInfo: searchRegex }
+        ];
+    }
+
+    try {
+        const providers = await User.find(query);
+        res.render('search-results', { 
+            title: 'Search Results', 
+            providers: providers, 
+            uniqueCategories: uniqueCategories,
+            query: q, 
+            // FIX: Pass the selected category as 'selectedCategory' to match the EJS template's expectation
+            selectedCategory: category 
+        });
+    } catch (error) {
+        console.error('Search Error:', error);
+        res.render('search-results', { 
+            title: 'Search Results', 
+            providers: [], 
+            uniqueCategories: uniqueCategories,
+            query: q, 
+            // FIX: Pass the selected category as 'selectedCategory' even in error
+            selectedCategory: category, 
+            error: 'Failed to perform search.' 
+        });
+    }
+});
+
+// 5.9 PROVIDER VIEW ROUTE (Public Profile)
 app.get('/provider/view/:id', async (req, res) => {
     try {
-        const provider = await Provider.findById(req.params.id);
-        if (!provider) {
-            req.flash('error', 'Provider not found.');
-            return res.redirect('/search');
+        const providerId = req.params.id;
+        const provider = await User.findById(providerId);
+
+        if (!provider || !provider.isSubscribed) {
+            return res.status(404).render('404', { title: 'Provider Not Found' });
         }
-        res.render('public-profile', {
-            title: provider.name + ' - Profile',
-            provider: provider,
-            isLoggedIn: req.session.userId ? true : false,
+        
+        res.render('public-profile', { 
+            title: `${provider.name}'s Profile`, 
+            provider
         });
     } catch (error) {
-        console.error('Error viewing public profile:', error);
-        req.flash('error', 'An error occurred fetching the profile.');
-        res.redirect('/search');
+        console.error('Public Profile Load Error:', error);
+        res.status(404).render('404', { title: 'Provider Not Found' });
     }
 });
 
 
-// 5.8 SEARCH SERVICE PROVIDERS (GET)
-app.get('/search', async (req, res) => {
+// 5.10 FORGOT PASSWORD - Form
+app.get('/forgot-password', (req, res) => {
+    res.render('forgot-password', { title: 'Forgot Password', error: null, message: null });
+});
+
+// 5.11 FORGOT PASSWORD - Process (Placeholder)
+app.post('/forgot-password', async (req, res) => {
+    const { email } = req.body;
+    
     try {
-        const query = req.query.query || '';
-        const category = req.query.category || 'All Categories'; 
-        let filter = {};
-
-        // Build query filter
-        if (query) {
-            // Case-insensitive search on name
-            filter.name = { $regex: query, $options: 'i' };
+        const user = await User.findOne({ email });
+        
+        if (!user) {
+            req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
+            return res.redirect('/forgot-password');
         }
-
-        if (category && category !== 'All Categories') {
-            filter.category = category;
-        }
-
-        // Fetch providers matching the filter (This retrieves ALL fields, including profilePictureUrl and description)
-        const providers = await Provider.find(filter);
-
-        // Fetch all unique categories for the dropdown
-        const uniqueCategories = await Provider.distinct('category');
-        uniqueCategories.sort(); 
-
-        res.render('search-results', {
-            title: 'Search Results',
-            providers: providers,
-            query: query,
-            selectedCategory: category, // Variable used by EJS template
-            uniqueCategories: ['All Categories', 'Plumbing', 'Electrician', 'Gardening', 'Cleaning', ...uniqueCategories.filter(c => c && c.trim() !== '')],
-            isLoggedIn: req.session.userId ? true : false,
-            error: null
-        });
+        
+        console.log(`[PASSWORD RESET] Token link GENERATED for: ${email}`);
+        req.session.message = 'If an account exists for this email, a password reset link has been sent.'; 
+        return res.redirect('/forgot-password');
 
     } catch (error) {
-        console.error('Error during search:', error);
-        res.render('search-results', {
-            title: 'Search Results',
-            providers: [],
-            query: req.query.query || '',
-            selectedCategory: req.query.category || 'All Categories',
-            uniqueCategories: ['All Categories', 'Plumbing', 'Electrician', 'Gardening', 'Cleaning'],
-            isLoggedIn: req.session.userId ? true : false,
-            error: 'An error occurred while searching for providers.'
-        });
+        console.error('Forgot Password Error:', error);
+        req.session.error = 'An internal error occurred during the request.';
+        return res.redirect('/forgot-password');
     }
 });
 
-
-// Start the server
-app.listen(PORT, () => console.log(`Server running on port ${PORT}`));
+// === 6. START THE SERVER ===
+app.listen(PORT, () => {
+    console.log(`Server running in ${process.env.NODE_ENV} mode on port ${PORT}`);
+});
