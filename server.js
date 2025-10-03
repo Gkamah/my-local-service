@@ -14,8 +14,17 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '50mb' })); 
 
 // 1. Database Connection (using MONGODB_URI)
-// CRITICAL FIX: Removed the '|| mongodb://localhost...' fallback. The environment variable MUST be set.
 const MONGODB_URI = process.env.MONGODB_URI; 
+
+// Warning about session store in production
+console.warn("WARNING: Using default MemoryStore for sessions. This is not suitable for production and will cause issues.");
+
+// CRITICAL CHECK: Ensure MONGODB_URI is defined
+if (!MONGODB_URI) {
+    console.error('FATAL ERROR: MONGODB_URI environment variable is not set.');
+    // Exit process to prevent Mongoose crash and signal configuration issue
+    process.exit(1); 
+}
 
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('MongoDB connected successfully'))
