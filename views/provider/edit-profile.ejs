@@ -1,80 +1,157 @@
-<!-- views/provider/edit-profile.ejs -->
-<%- include('../partials/head', { title: title }) %>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title><%= title %></title>
+    <!-- Load Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body { font-family: 'Inter', sans-serif; background-color: #f4f7f9; }
+        .profile-pic-preview { width: 150px; height: 150px; object-fit: cover; border: 4px solid #fff; box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1); }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col">
+    <!-- Navigation Bar (omitted for brevity, assume partial is loaded) -->
 
-<div class="form-container">
-    <h2>Edit Service Profile</h2>
-    <p class="subtitle">Update your business name, category, and contact information.</p>
-    
-    <% if (error) { %>
-        <p class="error-message"><%= error %></p>
-    <% } %>
-    
-    <form method="POST" action="/provider/edit">
-        <label for="name">Business Name / Name:</label>
-        <input type="text" id="name" name="name" value="<%= provider.name %>" required>
-
-        <label for="category">Service Category:</label>
-        <select id="category" name="category" required onchange="checkCategory(this)">
-            <option value="">-- Select or Add New --</option>
-            <!-- Check if current category matches a predefined option -->
-            <option value="plumbing" <%= currentCategory === 'plumbing' ? 'selected' : '' %>>Plumbing</option>
-            <option value="electrician" <%= currentCategory === 'electrician' ? 'selected' : '' %>>Electrician</option>
-            <option value="gardening" <%= currentCategory === 'gardening' ? 'selected' : '' %>>Gardening</option>
-            <option value="cleaning" <%= currentCategory === 'cleaning' ? 'selected' : '' %>>Cleaning</option>
-            <option value="other" id="other-option" <%= !['plumbing', 'electrician', 'gardening', 'cleaning'].includes(currentCategory) ? 'selected' : '' %>>Other (Specify Below)</option>
-        </select>
+    <main class="flex-grow p-4 md:p-8 max-w-4xl mx-auto w-full">
+        <h1 class="text-4xl font-extrabold text-gray-900 mb-6 border-b pb-2">Edit Your Profile</h1>
         
-        <!-- Conditional Input Field for New Category -->
-        <div id="newCategoryContainer" style="display:none; margin-top: 10px;">
-            <label for="newCategory">Enter New Category Name:</label>
-            <input type="text" id="newCategory" name="newCategory" placeholder="e.g., Drone Photography">
-        </div>
-        
-        <label for="contactInfo">Contact Phone/WhatsApp (Public):</label>
-        <input type="text" id="contactInfo" name="contactInfo" value="<%= provider.contactInfo %>" required>
+        <% if (error) { %>
+            <div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl mb-4" role="alert">
+                <p><%= error %></p>
+            </div>
+        <% } %>
 
-        <button type="submit" class="btn-primary">Save Changes</button>
-    </form>
-    <p><a href="/provider/profile">Cancel and return to Profile</a></p>
-</div>
-
-<script>
-    function checkCategory(selectElement) {
-        const container = document.getElementById('newCategoryContainer');
-        const newCategoryInput = document.getElementById('newCategory');
-        const otherOption = document.getElementById('other-option');
-
-        // Check if the current value is 'other' OR if no predefined option matched (which defaults to 'other' selection logic)
-        const isOther = selectElement.value === 'other';
-
-        if (isOther) {
-            container.style.display = 'block';
-            newCategoryInput.setAttribute('required', 'required');
+        <form action="/provider/edit" method="POST" class="bg-white p-6 rounded-2xl shadow-xl space-y-6">
             
-            // If the current category is NOT a predefined one (i.e., it's a custom category saved previously)
-            // pre-populate the 'newCategory' field with the existing custom category name.
-            const predefinedCategories = ['plumbing', 'electrician', 'gardening', 'cleaning'];
-            const currentCategorySaved = "<%= provider.category %>".toLowerCase();
+            <input type="hidden" name="id" value="<%= provider._id %>">
+
+            <!-- Profile Picture Section -->
+            <div class="border border-gray-200 p-4 rounded-xl space-y-3">
+                <h2 class="text-2xl font-semibold text-indigo-700">Profile Branding</h2>
+                
+                <div class="flex items-center space-x-6">
+                    <% 
+                        const defaultImage = 'https://placehold.co/150x150/5B5E63/ffffff?text=' + encodeURIComponent(provider.name.charAt(0).toUpperCase());
+                        let currentImageUrl = defaultImage;
+                        if (provider.profilePictureUrl && provider.profilePictureUrl.length > 0) {
+                            currentImageUrl = provider.profilePictureUrl.startsWith('data:image') 
+                                ? provider.profilePictureUrl 
+                                : `data:image/png;base64,${provider.profilePictureUrl}`;
+                        }
+                    %>
+                    <img id="image-preview" src="<%= currentImageUrl %>" alt="Profile Picture Preview" 
+                         class="profile-pic-preview rounded-full flex-shrink-0">
+                    
+                    <div class="flex-grow">
+                        <label for="profilePicture" class="block text-sm font-medium text-gray-700 mb-1">Upload New Profile Photo</label>
+                        <input type="file" id="profilePicture" accept="image/*" onchange="previewImage(event)" 
+                               class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100">
+                        <p class="text-xs text-gray-500 mt-1">PNG or JPEG (Max 1MB)</p>
+                        <!-- Hidden input to hold the Base64 string for the server -->
+                        <input type="hidden" id="profilePictureData" name="profilePictureData" value="<%= provider.profilePictureUrl %>">
+                    </div>
+                </div>
+            </div>
+
+            <!-- General Details -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div>
+                    <label for="name" class="block text-sm font-medium text-gray-700">Full Name</label>
+                    <input type="text" id="name" name="name" value="<%= provider.name %>" required
+                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+                <div>
+                    <label for="contactInfo" class="block text-sm font-medium text-gray-700">Contact Phone / Info</label>
+                    <input type="text" id="contactInfo" name="contactInfo" value="<%= provider.contactInfo %>" required
+                           class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                </div>
+            </div>
+
+            <!-- Category Field -->
+            <div>
+                <label for="category" class="block text-sm font-medium text-gray-700">Service Category</label>
+                <select id="category" name="category" required
+                        class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+                    <option value="">-- Select Category --</option>
+                    <% ['Driver', 'Plumbing', 'Electrician', 'Gardening', 'Cleaning'].forEach(cat => { %>
+                        <option value="<%= cat %>" <%= provider.category === cat ? 'selected' : '' %>><%= cat %></option>
+                    <% }); %>
+                    <option value="other" <%= !['Driver', 'Plumbing', 'Electrician', 'Gardening', 'Cleaning'].includes(provider.category) ? 'selected' : '' %>>
+                        Other (<%= !['Driver', 'Plumbing', 'Electrician', 'Gardening', 'Cleaning'].includes(provider.category) ? provider.category : 'Specify Below' %>)
+                    </option>
+                </select>
+            </div>
             
-            if (!predefinedCategories.includes(currentCategorySaved)) {
-                 newCategoryInput.value = "<%= provider.category %>"; // Display the saved name
-            } else {
-                 newCategoryInput.value = ''; // Clear if they switch from a predefined option to 'Other'
+            <!-- Custom Category Input -->
+            <div id="newCategoryContainer" style="display: none;">
+                <label for="newCategory" class="block text-sm font-medium text-gray-700">Specify New Category</label>
+                <input type="text" id="newCategory" name="newCategory" 
+                       value="<%= !['Driver', 'Plumbing', 'Electrician', 'Gardening', 'Cleaning'].includes(provider.category) ? provider.category : '' %>"
+                       class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500">
+            </div>
+
+            <!-- Description of Services -->
+            <div>
+                <label for="description" class="block text-sm font-medium text-gray-700">Description of Services Offered (Min 50 words)</label>
+                <textarea id="description" name="description" rows="4" required minlength="50"
+                          class="mt-1 block w-full border border-gray-300 rounded-lg shadow-sm p-3 focus:border-indigo-500 focus:ring-indigo-500"><%= provider.description %></textarea>
+                <p class="text-xs text-gray-500 mt-1">This detailed description is visible to visitors on the search page.</p>
+            </div>
+
+            <div class="pt-4 border-t">
+                <button type="submit" class="w-full bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-4 rounded-lg transition shadow-md focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2">
+                    Save Profile Changes
+                </button>
+            </div>
+        </form>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const categorySelect = document.getElementById('category');
+            const newCategoryContainer = document.getElementById('newCategoryContainer');
+            
+            // Initial check for 'Other' category visibility
+            if (categorySelect.value === 'other') {
+                newCategoryContainer.style.display = 'block';
             }
 
-        } else {
-            container.style.display = 'none';
-            newCategoryInput.removeAttribute('required');
-            newCategoryInput.value = ''; 
-        }
-    }
+            categorySelect.addEventListener('change', (e) => {
+                if (e.target.value === 'other') {
+                    newCategoryContainer.style.display = 'block';
+                } else {
+                    newCategoryContainer.style.display = 'none';
+                }
+            });
+        });
 
-    document.addEventListener('DOMContentLoaded', () => {
-        const categorySelect = document.getElementById('category');
-        if (categorySelect) {
-             checkCategory(categorySelect);
-        }
-    });
-</script>
+        // Function to handle file input, read as Base64, and update hidden field and preview
+        function previewImage(event) {
+            const file = event.target.files[0];
+            if (!file) return;
 
-<%- include('../partials/footer') %>
+            // Simple client-side file size check (1MB limit)
+            if (file.size > 1024 * 1024) {
+                alert('File is too large. Maximum size is 1MB.');
+                event.target.value = ''; // Clear the input
+                return;
+            }
+
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                const base64Data = e.target.result;
+                
+                // Update the preview image source
+                document.getElementById('image-preview').src = base64Data;
+
+                // Update the hidden input field that sends the data to the server
+                // We send the full data URI (e.g., data:image/png;base64,...)
+                document.getElementById('profilePictureData').value = base64Data;
+            };
+            reader.readAsDataURL(file);
+        }
+    </script>
+</body>
+</html>
