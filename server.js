@@ -196,6 +196,17 @@ app.get('/provider/profile', isLoggedIn, async (req, res) => {
 app.get('/provider/edit', isLoggedIn, async (req, res) => {
     try {
         const provider = await User.findById(req.session.userId);
+        
+        // FIX: Check if provider exists to prevent errors from stale sessions
+        if (!provider) {
+             req.session.destroy(err => {
+                 if (err) console.error('Session Destroy Error:', err);
+                 req.session.error = 'Your session is invalid. Please log in again.';
+                 res.redirect('/login');
+             });
+             return;
+        }
+
         res.render('provider/edit-profile', { 
             title: 'Edit Profile', 
             provider,
@@ -204,7 +215,8 @@ app.get('/provider/edit', isLoggedIn, async (req, res) => {
         });
     } catch (error) {
         console.error('Edit Profile Load Error:', error);
-        res.status(500).send('Error loading profile edit form.');
+        // Better message for the user in case of Mongoose error (e.g., bad ID format)
+        res.status(500).send('Error loading profile edit form. Please try logging out and back in.');
     }
 });
 
