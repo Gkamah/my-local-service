@@ -126,8 +126,9 @@
 
     <script>
         // CRITICAL FIX: Safely parse provider data embedded from the server.
-        // The EJS engine replaces <%- JSON.stringify(...) %> with the data before sending to the client.
-        const providersData = JSON.parse('<%- JSON.stringify(providers || []) %>');
+        // EJS compiles this line. Using backticks (template literals) ensures special characters 
+        // in the JSON string (like quotes or newlines) do not break the JavaScript string definition.
+        const providersData = JSON.parse(`<%- JSON.stringify(providers || []) %>`);
 
         // Helper function to handle Base64 image data
         function getImageUrl(url) {
