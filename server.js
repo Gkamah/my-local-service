@@ -338,7 +338,8 @@ app.get('/search', async (req, res) => {
             providers: providers, 
             uniqueCategories: uniqueCategories,
             query: q, 
-            category: category
+            // FIX: Pass the selected category as 'selectedCategory' to match the EJS template's expectation
+            selectedCategory: category 
         });
     } catch (error) {
         console.error('Search Error:', error);
@@ -347,7 +348,8 @@ app.get('/search', async (req, res) => {
             providers: [], 
             uniqueCategories: uniqueCategories,
             query: q, 
-            category: category, 
+            // FIX: Pass the selected category as 'selectedCategory' even in error
+            selectedCategory: category, 
             error: 'Failed to perform search.' 
         });
     }
