@@ -88,9 +88,9 @@
                              data-id="<%= provider._id %>"
                              onclick="viewDetails('<%= provider._id %>')">
                             
-                            <!-- Profile Picture (Small Thumbnail) -->
-                            <img src="<%= provider.profilePictureUrl || 'https://placehold.co/60x60/8a2be2/ffffff?text=P' %>" 
-                                 onerror="this.onerror=null; this.src='https://placehold.co/60x60/8a2be2/ffffff?text=P'"
+                            <!-- Profile Picture (Small Thumbnail) - FIX: Use a static placeholder to avoid EJS compilation failure 
+                                 caused by injecting potentially large Base64 strings repeatedly. The full image loads correctly in the details panel via JavaScript. -->
+                            <img src="https://placehold.co/60x60/8a2be2/ffffff?text=P" 
                                  alt="<%= provider.name %>" 
                                  class="w-16 h-16 object-cover rounded-full mr-4 border-2 border-[#8a2be2]">
 
