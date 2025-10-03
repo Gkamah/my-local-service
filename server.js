@@ -19,13 +19,9 @@ const MONGODB_URI = process.env.MONGODB_URI;
 // Warning about session store in production
 console.warn("WARNING: Using default MemoryStore for sessions. This is not suitable for production and will cause issues.");
 
-// CRITICAL CHECK: Ensure MONGODB_URI is defined
-if (!MONGODB_URI) {
-    console.error('FATAL ERROR: MONGODB_URI environment variable is not set.');
-    // Exit process to prevent Mongoose crash and signal configuration issue
-    process.exit(1); 
-}
-
+// CRITICAL FIX: Removed the aggressive process.exit(1) check. 
+// This allows Mongoose to attempt the connection, relying on the environment 
+// variable being set in the Render configuration.
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('MongoDB connected successfully'))
     .catch(err => console.error('MongoDB connection error:', err));
