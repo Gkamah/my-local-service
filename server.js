@@ -2,7 +2,6 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const session = require('express-session');
-const flash = require('connect-flash');
 const bcrypt = require('bcrypt');
 const path = require('path');
 
@@ -48,16 +47,31 @@ app.use(session({
     cookie: { maxAge: 24 * 60 * 60 * 1000 } // 24 hours
 }));
 
-// Flash messages middleware
-app.use(flash());
-
-// Global middleware to pass session variables to all views
+// --- BEGIN Flash Message Replacement ---
+// Global middleware to handle custom flash messages using session
 app.use((req, res, next) => {
-    res.locals.success_msg = req.flash('success');
-    res.locals.error_msg = req.flash('error');
+    // 1. Transfer flash messages from session to res.locals
+    res.locals.success_msg = req.session.success_msg;
+    res.locals.error_msg = req.session.error_msg;
+    
+    // 2. Clear flash messages in session immediately after transfer
+    delete req.session.success_msg;
+    delete req.session.error_msg;
+
     res.locals.isLoggedIn = req.session.userId ? true : false;
+    
+    // 3. Helper function to set flash messages
+    req.flash = (type, message) => {
+        if (type === 'success') {
+            req.session.success_msg = message;
+        } else if (type === 'error') {
+            req.session.error_msg = message;
+        }
+    };
+
     next();
 });
+// --- END Flash Message Replacement ---
 
 // Middleware to check if the user is authenticated (logged in)
 const ensureAuthenticated = (req, res, next) => {
