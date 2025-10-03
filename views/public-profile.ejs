@@ -1,127 +1,73 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title><%= title %></title>
-    <!-- Load Tailwind CSS -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <style>
-        /* Custom font and basic body styling */
-        body {
-            font-family: 'Inter', sans-serif;
-            background-color: #f4f7f9; /* Light background for the overall page */
-        }
-        /* Custom styles for profile picture */
-        .profile-pic {
-            width: 150px;
-            height: 150px;
-            object-fit: cover;
-            border: 4px solid white;
-            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-        }
-    </style>
-</head>
-<body>
-    <!-- Navigation Bar (Simple placeholder, assume a layout file handles the main nav) -->
-    <nav class="bg-gray-800 text-white p-4 shadow-lg">
-        <div class="max-w-7xl mx-auto flex justify-between items-center">
-            <a href="/" class="text-2xl font-bold hover:text-indigo-400 transition">Local Service Finder</a>
-            <a href="/search" class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg font-medium transition">Back to Search</a>
-        </div>
-    </nav>
+<%- include('partials/head', { title: title }) %>
 
-    <!-- Main Profile Content Area -->
-    <main class="py-12 px-4 sm:px-6 lg:px-8">
-        <div class="max-w-4xl mx-auto bg-white shadow-xl rounded-2xl overflow-hidden">
+<!-- Uses Tailwind CSS for a clean, professional look -->
+<div class="container mx-auto p-4 md:p-8">
+    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-6 md:p-10 border border-gray-100">
+
+        <!-- Header Section: Image and Basic Info -->
+        <div class="flex flex-col md:flex-row items-center md:items-start border-b pb-6 mb-6">
             
-            <!-- Header and Profile Picture -->
-            <div class="relative bg-gradient-to-r from-indigo-600 to-purple-700 h-40">
-                <div class="absolute inset-0 opacity-10"></div>
-                <div class="absolute -bottom-20 left-1/2 transform -translate-x-1/2 p-2 bg-white rounded-full">
-                    <% 
-                        const defaultImage = 'https://placehold.co/150x150/5B5E63/ffffff?text=' + encodeURIComponent(provider.name.charAt(0).toUpperCase());
-                        const imageUrl = provider.profilePictureUrl || defaultImage;
-                    %>
-                    <img src="<%= imageUrl %>" alt="<%= provider.name %>" 
-                         class="profile-pic rounded-full"
-                         onerror="this.onerror=null;this.src='<%= defaultImage %>';">
-                </div>
-            </div>
-
-            <!-- Basic Info Section -->
-            <div class="pt-24 pb-8 text-center">
-                <h1 class="text-4xl font-extrabold text-gray-900 mb-2">
-                    <%= provider.name %>
-                </h1>
-                <p class="text-xl font-semibold text-indigo-600 mb-4">
-                    <%= provider.category %>
-                </p>
-                <!-- Subscription Status Badge -->
-                <% if (provider.isSubscribed) { %>
-                    <span class="inline-flex items-center px-3 py-1 rounded-full text-sm font-medium bg-green-100 text-green-800 shadow-sm">
-                        <svg class="w-4 h-4 mr-1" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>
-                        Verified & Subscribed
-                    </span>
+            <div class="flex-shrink-0 mb-6 md:mb-0 md:mr-8">
+                <!-- Profile Picture Display Logic -->
+                <% if (provider.profilePictureUrl && provider.profilePictureUrl.startsWith('data:image')) { %>
+                    <img 
+                        src="<%= provider.profilePictureUrl %>" 
+                        alt="<%= provider.name %> Profile Picture" 
+                        class="w-32 h-32 rounded-full object-cover border-4 border-indigo-500 shadow-lg"
+                    >
+                <% } else { %>
+                    <!-- Default Initial Icon -->
+                    <div class="w-32 h-32 rounded-full bg-indigo-600 flex items-center justify-center text-6xl font-extrabold text-white shadow-lg">
+                        <%= provider.name.charAt(0).toUpperCase() %>
+                    </div>
                 <% } %>
             </div>
 
-            <!-- Detail Cards Container -->
-            <div class="p-8 space-y-8">
-                
-                <!-- About Me Card -->
-                <div class="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-100">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        <svg class="w-6 h-6 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2v-3m-4-8l-4-4m0 0L8 8m4-4v12"></path></svg>
-                        About <%= provider.name.split(' ')[0] %>
-                    </h2>
-                    <p class="text-gray-600 leading-relaxed">
-                        <%= provider.description || 'No detailed description provided yet.' %>
-                    </p>
+            <!-- Provider Text Details -->
+            <div class="text-center md:text-left">
+                <h1 class="text-4xl font-extrabold text-gray-900 mb-2">
+                    <%= provider.name %>
+                </h1>
+                <p class="text-xl text-indigo-600 font-semibold mb-3">
+                    Service: <%= provider.category %>
+                </p>
+                <div class="flex items-center justify-center md:justify-start text-gray-700">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2 text-indigo-500" viewBox="0 0 20 20" fill="currentColor">
+                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.772-1.549a1 1 0 011.06-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
+                    </svg>
+                    <span>Contact: <%= provider.contactInfo %></span>
                 </div>
-                
-                <!-- Services & Expertise Card -->
-                <div class="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-100">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        <svg class="w-6 h-6 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2m-4 0V3m0 2v2m0 0h2m-2 0H9m12 0H9"></path></svg>
-                        Main Service
-                    </h2>
-                    <div class="flex flex-wrap gap-2">
-                        <span class="inline-block bg-indigo-100 text-indigo-800 text-sm font-semibold px-3 py-1 rounded-full shadow-sm">
-                            <%= provider.category %>
-                        </span>
-                    </div>
-                </div>
-
-                <!-- Contact Information Card -->
-                <div class="bg-gray-50 p-6 rounded-xl shadow-md border border-gray-100">
-                    <h2 class="text-2xl font-bold text-gray-800 mb-4 flex items-center">
-                        <svg class="w-6 h-6 text-indigo-500 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"></path></svg>
-                        Contact & Booking
-                    </h2>
-                    <ul class="space-y-3 text-gray-600">
-                        <li class="flex items-center">
-                            <span class="font-medium w-24">Email:</span>
-                            <a href="mailto:<%= provider.email %>" class="text-indigo-600 hover:text-indigo-800"><%= provider.email %></a>
-                        </li>
-                        <li class="flex items-center">
-                            <span class="font-medium w-24">Phone:</span>
-                            <span class="text-gray-800"><%= provider.contactInfo || 'Not Provided' %></span>
-                        </li>
-                    </ul>
-                </div>
+                <p class="text-sm text-gray-500 mt-1">
+                    Profile status: Verified Subscriber
+                </p>
             </div>
-            
-            <!-- Footer Call to Action -->
-            <div class="p-8 bg-gray-100 text-center">
-                <p class="text-gray-700 mb-4">Ready to book this service provider?</p>
-                <!-- This would link to a booking form or display a direct contact method -->
-                <a href="mailto:<%= provider.email %>" class="inline-block bg-green-500 hover:bg-green-600 text-white font-bold py-3 px-8 rounded-lg shadow-lg transition transform hover:scale-105">
-                    Contact <%= provider.name %> Now
-                </a>
-            </div>
-
         </div>
-    </main>
-</body>
-</html>
+
+        <!-- Description Section (The main content for site visitors) -->
+        <h2 class="text-2xl font-bold text-gray-800 mb-4">
+            About My Services
+        </h2>
+        
+        <div class="bg-gray-50 p-6 rounded-lg border border-gray-200 min-h-[150px]">
+            <% if (provider.description && provider.description.length > 0) { %>
+                <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">
+                    <!-- The whitespace-pre-wrap ensures line breaks from the textarea are respected -->
+                    <%= provider.description %>
+                </p>
+            <% } else { %>
+                <p class="text-gray-500 italic">
+                    This provider has not yet added a detailed description of their services. Please contact them directly using the information above.
+                </p>
+            <% } %>
+        </div>
+
+        <!-- Back Button -->
+        <div class="mt-8 text-center">
+             <a href="/search" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-sm text-white bg-indigo-600 hover:bg-indigo-700 transition duration-150">
+                &larr; Back to Search Results
+            </a>
+        </div>
+    </div>
+</div>
+
+<%- include('partials/footer') %>
