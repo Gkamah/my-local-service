@@ -32,8 +32,9 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware for parsing application/json and application/x-www-form-urlencoded
-app.use(express.json({ limit: '5mb' })); // Increased limit for Base64 image data
-app.use(express.urlencoded({ extended: true, limit: '5mb' })); // Increased limit
+// CRITICAL FIX: Increased limit to 50mb to handle large Base64 profile images without crashing
+app.use(express.json({ limit: '50mb' })); 
+app.use(express.urlencoded({ extended: true, limit: '50mb' })); 
 
 // Express Session Middleware
 app.use(session({
@@ -47,9 +48,10 @@ app.use(session({
     } 
 }));
 
-// Global locals for EJS templates
+// Global locals for EJS templates (Handles Flash Messages)
 app.use((req, res, next) => {
     res.locals.isLoggedIn = !!req.session.userId;
+    // Rename to consistent success/error messaging variables for EJS templates
     res.locals.error = req.session.error; 
     res.locals.message = req.session.message; 
     delete req.session.error; 
@@ -79,6 +81,7 @@ app.get('/register', (req, res) => {
 });
 
 app.post('/register', async (req, res) => {
+    // Ensure all required fields, including new ones, are destructured
     const { email, password, name, category, contactInfo, newCategory, profilePictureData, description } = req.body;
     
     let finalCategory = category;
@@ -97,6 +100,7 @@ app.post('/register', async (req, res) => {
             name,
             category: finalCategory,
             contactInfo,
+            // CRITICAL: Save initial profile data here
             profilePictureUrl: profilePictureData || '',
             description: description || '',
             role: 'provider',
@@ -208,7 +212,6 @@ app.get('/provider/edit', isLoggedIn, async (req, res) => {
             return req.session.destroy(() => res.redirect('/login'));
         }
         
-        // FIX: Ensure currentCategory is defined for the EJS file
         const currentCategory = provider.category;
 
         res.render('provider/edit-profile', { 
@@ -228,6 +231,7 @@ app.get('/provider/edit', isLoggedIn, async (req, res) => {
 
 // 5.6 PROVIDER EDIT PROFILE (POST)
 app.post('/provider/edit', isLoggedIn, async (req, res) => {
+    // Ensure all fields are included in destructuring
     const { name, category, contactInfo, newCategory, profilePictureData, description } = req.body;
     
     let finalCategory = category;
@@ -239,14 +243,14 @@ app.post('/provider/edit', isLoggedIn, async (req, res) => {
     }
 
     try {
-        // FIX: Extract and update profile picture data and description
+        // CRITICAL FIX: Extract and update profile picture data and description
         const updateFields = {
             name,
             category: finalCategory,
             contactInfo,
-            description: description || '',
             // Save the Base64 string directly
-            profilePictureUrl: profilePictureData || ''
+            profilePictureUrl: profilePictureData || '',
+            description: description || '' 
         };
 
         const updatedProvider = await User.findByIdAndUpdate(req.session.userId, updateFields, { new: true });
@@ -326,19 +330,20 @@ app.get('/search', async (req, res) => {
         const searchRegex = new RegExp(q, 'i');
         query.$or = [
             { name: searchRegex },
+            // CRITICAL FIX: Search providers by description as well
             { description: searchRegex },
             { contactInfo: searchRegex }
         ];
     }
 
     try {
-        const providers = await User.find(query);
+        // This query retrieves all user fields, including profilePictureUrl and description.
+        const providers = await User.find(query); 
         res.render('search-results', { 
             title: 'Search Results', 
             providers: providers, 
             uniqueCategories: uniqueCategories,
             query: q, 
-            // FIX: Pass the selected category as 'selectedCategory' to match the EJS template's expectation
             selectedCategory: category 
         });
     } catch (error) {
@@ -348,7 +353,6 @@ app.get('/search', async (req, res) => {
             providers: [], 
             uniqueCategories: uniqueCategories,
             query: q, 
-            // FIX: Pass the selected category as 'selectedCategory' even in error
             selectedCategory: category, 
             error: 'Failed to perform search.' 
         });
@@ -359,7 +363,8 @@ app.get('/search', async (req, res) => {
 app.get('/provider/view/:id', async (req, res) => {
     try {
         const providerId = req.params.id;
-        const provider = await User.findById(providerId);
+        // The provider object returned includes the profilePictureUrl and description
+        const provider = await User.findById(providerId); 
 
         if (!provider || !provider.isSubscribed) {
             return res.status(404).render('404', { title: 'Provider Not Found' });
