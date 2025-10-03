@@ -1,4 +1,3 @@
-<!-- views/public-profile.ejs -->
 <%- include('./partials/head', { title: title }) %>
 
 <div class="container profile-view-container">
@@ -181,10 +180,13 @@
 
     .icon-primary {
         /* FIX: If the global CSS is making this icon large, the font-size must be reset here */
-        font-size: 1.5rem !important; /* Adding !important as a last resort */
+        font-size: 1.5rem; 
         color: #1a1a40;
         flex-shrink: 0;
         margin-top: 5px;
+        /* FINAL FIX: Aggressive inline style to ensure icon size is correct */
+        width: 24px;
+        height: 24px;
     }
 
     .detail-content label {
