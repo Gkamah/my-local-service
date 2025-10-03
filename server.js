@@ -14,7 +14,8 @@ app.use(express.urlencoded({ extended: true }));
 app.use(express.json({ limit: '50mb' })); 
 
 // 1. Database Connection (using MONGODB_URI)
-const MONGODB_URI = process.env.MONGODB_URI || 'mongodb://localhost:27017/localservicedb';
+// CRITICAL FIX: Removed the '|| mongodb://localhost...' fallback. The environment variable MUST be set.
+const MONGODB_URI = process.env.MONGODB_URI; 
 
 mongoose.connect(MONGODB_URI)
     .then(() => console.log('MongoDB connected successfully'))
