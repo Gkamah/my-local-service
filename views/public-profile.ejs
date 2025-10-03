@@ -1,97 +1,264 @@
-<%- include('partials/head', { title: title }) %>
+<!-- views/public-profile.ejs -->
+<%- include('./partials/head', { title: title }) %>
 
-<!-- Uses Tailwind CSS for a clean, professional look -->
-<div class="container mx-auto p-4 md:p-8">
-    <div class="max-w-4xl mx-auto bg-white rounded-xl shadow-2xl p-6 md:p-10 border border-gray-100">
-
-        <!-- Header Section: Image and Basic Info -->
-        <div class="flex flex-col md:flex-row items-center md:items-start border-b pb-6 mb-6">
-            
-            <div class="flex-shrink-0 mb-6 md:mb-0 md:mr-8">
-                <!-- Profile Picture Display Logic -->
+<div class="container profile-view-container">
+    <div class="profile-card">
+        <header class="profile-header">
+            <div class="profile-photo-lg">
                 <% 
-                    // Sanitize the URL to ensure it has the necessary prefix for Base64 data
+                    // 1. Photo Logic: Check for Base64 URL and ensure correct prefix
                     let finalProfileUrl = provider.profilePictureUrl;
                     if (finalProfileUrl && finalProfileUrl.length > 0 && !finalProfileUrl.startsWith('data:image')) {
-                        // Assuming JPEG/PNG if it's a raw Base64 string
+                        // Assuming JPEG/PNG if it's a raw Base64 string (Crucial for rendering)
                         finalProfileUrl = `data:image/jpeg;base64,${finalProfileUrl}`;
                     }
                 %>
-
                 <% if (finalProfileUrl && finalProfileUrl.startsWith('data:image')) { %>
+                    <!-- Display the actual image, matching the container size -->
                     <img 
                         src="<%= finalProfileUrl %>" 
                         alt="<%= provider.name %> Profile Picture" 
-                        class="w-32 h-32 rounded-full object-cover border-4 border-indigo-600 shadow-xl transition transform hover:scale-105 duration-300"
-                        onerror="this.onerror=null; this.src='https://placehold.co/128x128/8a2be2/ffffff?text=P'"
+                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"
+                        onerror="this.onerror=null; this.src='https://placehold.co/100x100/434375/ffffff?text=P';"
                     >
                 <% } else { %>
-                    <!-- Default Initial Icon: slightly darker background for better contrast -->
-                    <div class="w-32 h-32 rounded-full bg-indigo-700 flex items-center justify-center text-6xl font-extrabold text-white shadow-xl border-4 border-indigo-300">
-                        <%= provider.name.charAt(0).toUpperCase() %>
-                    </div>
+                    <!-- Fallback: Font Awesome Icon (Original style) -->
+                    <i class="fas fa-user-circle"></i>
                 <% } %>
             </div>
-
-            <!-- Provider Text Details -->
-            <div class="text-center md:text-left">
-                <h1 class="text-4xl font-extrabold text-gray-900 mb-2">
-                    <%= provider.name %>
-                </h1>
-                <p class="text-xl text-indigo-600 font-semibold mb-3">
-                    Service: <%= provider.category %>
-                </p>
-                <!-- FIX: Added inline style to force the icon size, overriding global CSS -->
-                <div class="flex items-center justify-center md:justify-start text-gray-700">
-                    <svg xmlns="http://www.w3.org/2000/svg" 
-                         class="h-5 w-5 mr-2 text-indigo-500 flex-shrink-0" 
-                         viewBox="0 0 20 20" 
-                         fill="currentColor"
-                         style="width: 1.25rem; height: 1.25rem;"> <!-- Aggressive inline style fix -->
-                        <path d="M2 3a1 1 0 011-1h2.153a1 1 0 01.986.836l.74 4.435a1 1 0 01-.54 1.06l-1.548.773a11.037 11.037 0 006.105 6.105l.772-1.549a1 1 0 011.06-.54l4.435.74a1 1 0 01.836.986V17a1 1 0 01-1 1h-2C7.82 18 2 12.18 2 5V3z" />
-                    </svg>
-                    <span>Contact: <%= provider.contactInfo %></span>
-                </div>
-                <p class="text-sm text-gray-500 mt-1">
-                    Profile status: Verified Subscriber
+            <div class="profile-info">
+                <h1><%= provider.name %></h1>
+                <span class="category-badge"><i class="fas fa-tools"></i> <%= provider.category %></span>
+                <p class="status-badge status-success">
+                    <i class="fas fa-certificate"></i> **Verified & Subscribed Professional**
                 </p>
             </div>
-        </div>
+        </header>
 
-        <!-- Description Section (The main content for site visitors) -->
-        <h2 class="text-2xl font-bold text-gray-800 mb-4 border-b pb-2">
-            About My Services
-        </h2>
-        
-        <div class="bg-white p-6 rounded-xl border border-gray-200 min-h-[150px] shadow-inner">
+        <section class="contact-details">
+            <h2>Contact Information</h2>
+            <div class="detail-item">
+                <i class="fas fa-envelope icon-primary"></i>
+                <div class="detail-content">
+                    <label>Email Address</label>
+                    <p><%= provider.email %></p>
+                </div>
+            </div>
+            <div class="detail-item">
+                <!-- Phone Icon -->
+                <i class="fas fa-phone icon-primary"></i>
+                <div class="detail-content">
+                    <label>Phone / WhatsApp</label>
+                    <p><%= provider.contactInfo %></p>
+                </div>
+            </div>
+        </section>
+
+        <section class="service-details">
+            <h2>About My Services</h2>
             <% 
-                // Enhanced robustness: Trim the description before checking length
-                const descriptionText = provider.description ? provider.description.trim() : '';
+                // 2. Description Logic: Display actual text or fallback
+                const descriptionText = provider.description ? provider.description.trim() : ''; 
             %>
+            
             <% if (descriptionText.length > 0) { %>
-                <p class="text-gray-700 whitespace-pre-wrap leading-relaxed">
-                    <!-- The whitespace-pre-wrap ensures line breaks from the textarea are respected -->
+                <p class="bio-text" style="white-space: pre-wrap; border-left-color: #8a2be2; background-color: #f3f3ff;">
                     <%= descriptionText %>
                 </p>
             <% } else { %>
-                <div class="text-center p-8 text-gray-500 border border-dashed border-gray-300 rounded-lg">
-                    <p class="font-semibold">
-                        Detailed description coming soon.
-                    </p>
-                    <p class="text-sm mt-1">
-                        This provider has not yet added a detailed description of their services.
-                    </p>
-                </div>
+                <p class="bio-text">
+                    This service provider is a verified, active subscriber committed to quality work in the **<%= provider.category %>** field.
+                    **They have not yet added a detailed description of their services.** Contact them directly via the information above to discuss your project and check their availability. 
+                </p>
             <% } %>
-        </div>
 
-        <!-- Back Button -->
-        <div class="mt-8 text-center">
-             <a href="/search" class="inline-flex items-center px-6 py-3 border border-transparent text-base font-medium rounded-full shadow-lg text-white bg-indigo-600 hover:bg-indigo-700 transition duration-150 transform hover:translate-y-0.5">
-                &larr; Back to Search Results
-            </a>
-        </div>
+            <p class="commitment-text">
+                <i class="fas fa-heart"></i> Committed to professionalism and customer satisfaction.
+            </p>
+        </section>
+        
+        <a href="/search" class="btn-primary back-to-search">
+            <i class="fas fa-arrow-left"></i> Back to Search Results
+        </a>
+
     </div>
 </div>
 
-<%- include('partials/footer') %>
+<style>
+    /* ... (CSS styles remain the same, ensuring compatibility with your existing public/css/style.css) ... */
+    .profile-view-container {
+        max-width: 650px;
+        margin: 3rem auto;
+        padding: 1rem;
+        font-family: Arial, sans-serif;
+    }
+    
+    .profile-card {
+        background: #ffffff;
+        border-radius: 12px;
+        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
+        padding: 2.5rem;
+    }
+
+    .profile-header {
+        display: flex;
+        align-items: center;
+        gap: 25px;
+        padding-bottom: 2rem;
+        margin-bottom: 2rem;
+        border-bottom: 2px solid #f0f0f5;
+    }
+
+    /* Large Profile Photo Placeholder/Container */
+    .profile-photo-lg {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: #e6e6fa; /* Light purple tint */
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        border: 4px solid #434375;
+        overflow: hidden; /* Ensures image is clipped to circle */
+    }
+
+    .profile-photo-lg i {
+        font-size: 4rem;
+        color: #8a2be2; /* Blue-violet */
+    }
+
+    .profile-info h1 {
+        font-size: 2rem;
+        color: #1a1a40;
+        margin: 0 0 5px 0;
+    }
+    
+    .category-badge {
+        display: inline-block;
+        padding: 0.4rem 1rem;
+        background-color: #d1e7dd;
+        color: #0f5132;
+        border-radius: 20px;
+        font-weight: 600;
+        font-size: 0.9rem;
+        margin-bottom: 10px;
+    }
+    .category-badge i {
+        margin-right: 5px;
+    }
+
+    .status-badge {
+        font-size: 0.9rem;
+        font-weight: 700;
+        color: #38a169;
+        display: block;
+    }
+    .status-badge i {
+        margin-right: 5px;
+    }
+
+    /* Contact and Service Sections */
+    section {
+        margin-bottom: 2rem;
+        padding-top: 1rem;
+    }
+    
+    section h2 {
+        color: #434375;
+        font-size: 1.3rem;
+        margin-bottom: 1rem;
+        border-bottom: 1px dashed #e0e0e0;
+        padding-bottom: 5px;
+    }
+
+    .detail-item {
+        display: flex;
+        align-items: flex-start;
+        gap: 15px;
+        margin-bottom: 1.5rem;
+    }
+
+    .icon-primary {
+        /* FIX: If the global CSS is making this icon large, the font-size must be reset here */
+        font-size: 1.5rem !important; /* Adding !important as a last resort */
+        color: #1a1a40;
+        flex-shrink: 0;
+        margin-top: 5px;
+    }
+
+    .detail-content label {
+        display: block;
+        font-size: 0.8rem;
+        color: #6c757d;
+        font-weight: 600;
+        text-transform: uppercase;
+        margin-bottom: 2px;
+    }
+
+    .detail-content p {
+        font-size: 1.1rem;
+        color: #333;
+        margin: 0;
+        word-break: break-all;
+    }
+    
+    .bio-text {
+        font-size: 1rem;
+        line-height: 1.6;
+        color: #333;
+        margin-bottom: 1.5rem;
+        background-color: #f9f9ff;
+        padding: 15px;
+        border-left: 5px solid #434375;
+        border-radius: 4px;
+    }
+
+    .commitment-text {
+        color: #1a1a40;
+        font-style: italic;
+        font-weight: 500;
+        font-size: 0.95rem;
+    }
+
+    .commitment-text i {
+        color: #dc3545;
+        margin-right: 5px;
+    }
+    
+    .back-to-search {
+        display: block;
+        width: 100%;
+        text-align: center;
+        margin-top: 2rem;
+        padding: 12px;
+        background-color: #6c757d;
+        color: white;
+        border-radius: 8px;
+        text-decoration: none;
+        transition: background-color 0.3s;
+    }
+    
+    .back-to-search:hover {
+        background-color: #5a6268;
+    }
+    
+    /* Responsive adjustments */
+    @media (max-width: 600px) {
+        .profile-card {
+            padding: 1.5rem;
+        }
+        .profile-header {
+            flex-direction: column;
+            text-align: center;
+        }
+        .profile-info {
+            text-align: center;
+        }
+        .profile-info h1 {
+            font-size: 1.75rem;
+        }
+    }
+</style>
+
+<%- include('./partials/footer') %>
