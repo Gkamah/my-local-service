@@ -215,8 +215,14 @@ app.get('/provider/edit', isLoggedIn, async (req, res) => {
         });
     } catch (error) {
         console.error('Edit Profile Load Error:', error);
-        // Better message for the user in case of Mongoose error (e.g., bad ID format)
-        res.status(500).send('Error loading profile edit form. Please try logging out and back in.');
+        
+        // FIX: If Mongoose throws a casting error (invalid ID format), destroy session and redirect
+        req.session.destroy(err => {
+             if (err) console.error('Session Destroy Error (in catch):', err);
+             // Use a flash error message to inform the user why they were logged out
+             req.session.error = 'A critical session error occurred. Please log in again.'; 
+             res.redirect('/login');
+        });
     }
 });
 
