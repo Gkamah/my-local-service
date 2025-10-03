@@ -197,7 +197,7 @@ app.get('/provider/edit', isLoggedIn, async (req, res) => {
     try {
         const provider = await User.findById(req.session.userId);
         
-        // FIX: Check if provider exists to prevent errors from stale sessions
+        // FIX 1: Check if provider exists to prevent errors from stale sessions
         if (!provider) {
              req.session.destroy(err => {
                  if (err) console.error('Session Destroy Error:', err);
@@ -207,16 +207,20 @@ app.get('/provider/edit', isLoggedIn, async (req, res) => {
              return;
         }
 
+        // FIX 2: Define 'currentCategory' for the EJS template to prevent ReferenceError
+        const currentCategory = provider.category.toLowerCase();
+
         res.render('provider/edit-profile', { 
             title: 'Edit Profile', 
             provider,
             baseCategories,
+            currentCategory, // <-- New variable passed to EJS
             error: null 
         });
     } catch (error) {
         console.error('Edit Profile Load Error:', error);
         
-        // FIX: If Mongoose throws a casting error (invalid ID format), destroy session and redirect
+        // FIX 3: If Mongoose throws a casting error (invalid ID format), destroy session and redirect
         req.session.destroy(err => {
              if (err) console.error('Session Destroy Error (in catch):', err);
              // Use a flash error message to inform the user why they were logged out
