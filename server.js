@@ -312,6 +312,17 @@ app.get('/provider/profile/edit', isAuthenticated, isProvider, async (req, res) 
 // 5.3 PROVIDER EDIT - Process
 app.post('/provider/edit', isAuthenticated, isProvider, async (req, res) => {
     try {
+        // --- START DEBUG LOGGING ---
+        console.log('--- Incoming Provider Edit Data ---');
+        console.log('Description length:', req.body.description ? req.body.description.length : 0);
+        console.log('Picture Data length:', req.body.profilePictureData ? req.body.profilePictureData.length : 0);
+        console.log('Other fields:', { 
+            name: req.body.name, 
+            category: req.body.category 
+        });
+        console.log('-----------------------------------');
+        // --- END DEBUG LOGGING ---
+        
         // Capture new fields: description and profile picture data
         const { 
             name, 
