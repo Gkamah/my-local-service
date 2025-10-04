@@ -1,20 +1,174 @@
-<%- include('partials/head', { title: 'Home' }) %>
+<%- include('./partials/head', { title: title }) %>
 
-<div class="hero-section">
-    <h1>Find Local Service Providers Near You</h1>
-    <p>Securely connect with verified service providers in your area.</p>
+<div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
 
-    <form action="/search" method="GET" class="search-form">
-        <input type="text" name="q" placeholder="E.g., Plumber, Electrician, Gardener" required>
-        <select name="category">
-            <option value="">All Categories</option>
-            <option value="plumbing">Plumbing</option>
-            <option value="electrician">Electrician</option>
-            <option value="gardening">Gardening</option>
-            <option value="cleaning">Cleaning</option>
-            </select>
-        <button type="submit" class="btn-primary">Search Services</button>
-    </form>
+<!-- 1. HERO SECTION -->
+<section class="bg-primary rounded-xl p-8 md:p-16 text-white text-center shadow-2xl mb-12">
+    <div class="flex flex-col md:flex-row items-center justify-between">
+        <!-- Left: Text Content -->
+        <div class="md:w-3/5 text-left mb-8 md:mb-0">
+            <h1 class="text-4xl md:text-5xl lg:text-6xl font-extrabold leading-tight mb-4">
+                Find Trusted Local Services in Your Area
+            </h1>
+            <p class="text-xl md:text-2xl font-light text-gray-200 mb-8">
+                Plumbers, Electricians, Cleaners, and more—vetted professionals booked right here, right now.
+            </p>
+            <!-- NOTE: The CTA uses the ACCENT color and TEXT-PRIMARY for visual pop -->
+            <a href="#search-section" class="inline-block bg-accent hover:bg-accent-dark text-primary font-bold py-3 px-8 rounded-full text-lg shadow-xl transition duration-300 transform hover:scale-105">
+                <i class="fas fa-star mr-2"></i> Start Your Search
+            </a>
+        </div>
+        <!-- Right: Image Placeholder -->
+        <div class="md:w-2/5 flex justify-center">
+            <div class="w-48 h-48 md:w-64 md:h-64 bg-white rounded-full flex items-center justify-center shadow-inner">
+                <i class="fas fa-map-marked-alt text-7xl text-accent"></i>
+            </div>
+        </div>
+    </div>
+</section>
+
+<!-- 2. HOW IT WORKS SECTION -->
+<section id="how-it-works" class="py-12">
+    <h2 class="text-3xl font-bold text-center text-primary mb-10">How It Works in 3 Simple Steps</h2>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+        <!-- Step 1: Uses accent border color -->
+        <div class="text-center p-6 bg-white rounded-lg shadow-lg border-t-4 border-accent transform hover:scale-105 transition duration-300">
+            <i class="fas fa-search text-5xl text-accent mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">1. Search & Filter</h3>
+            <p class="text-gray-600">Enter your need or category (e.g., "Plumber") and filter results by location and rating.</p>
+        </div>
+        <!-- Step 2: Uses accent border color -->
+        <div class="text-center p-6 bg-white rounded-lg shadow-lg border-t-4 border-accent transform hover:scale-105 transition duration-300">
+            <i class="fas fa-id-card-alt text-5xl text-accent mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">2. View Profiles</h3>
+            <p class="text-gray-600">Review detailed provider profiles, check average ratings, and read genuine customer feedback.</p>
+        </div>
+        <!-- Step 3: Uses accent border color -->
+        <div class="text-center p-6 bg-white rounded-lg shadow-lg border-t-4 border-accent transform hover:scale-105 transition duration-300">
+            <i class="fas fa-calendar-check text-5xl text-accent mb-4"></i>
+            <h3 class="text-xl font-semibold text-gray-800 mb-3">3. Connect & Book</h3>
+            <p class="text-gray-600">Use the contact info or inquiry form to connect directly and book your service quickly.</p>
+        </div>
+    </div>
+</section>
+
+<!-- 3. FEATURED SERVICES SECTION -->
+<section id="services" class="py-12">
+    <h2 class="text-3xl font-bold text-center text-primary mb-10">Our Featured Categories</h2>
+    <div class="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-6">
+        <% const icons = {
+            'Driver': 'fas fa-car', 'Plumbing': 'fas fa-faucet', 'Electrician': 'fas fa-bolt', 
+            'Gardening': 'fas fa-leaf', 'Cleaning': 'fas fa-broom' 
+        }; %>
+        <% categories.forEach(cat => { %>
+            <div class="text-center p-5 bg-white rounded-xl shadow-md hover:shadow-xl transition duration-300 border border-gray-200">
+                <i class="<%= icons[cat] || 'fas fa-tools' %> text-3xl text-primary mb-3"></i>
+                <h4 class="text-lg font-semibold text-gray-800"><%= cat %></h4>
+            </div>
+        <% }) %>
+    </div>
+</section>
+
+<!-- 4. SEARCH SECTION (Functionality uses theme colors) -->
+<section id="search-section" class="py-12 mt-10">
+    <!-- Header uses primary text and accent icon -->
+    <h2 class="text-3xl font-bold text-center text-primary mb-10 border-b pb-4"><i class="fas fa-search-dollar mr-2 text-accent"></i> Find Your Professional Now</h2>
+
+    <!-- Search Form -->
+    <div class="bg-white p-6 rounded-xl shadow-lg mb-8">
+        <form action="/" method="GET" class="flex flex-col md:flex-row gap-4">
+            
+            <!-- Category Dropdown -->
+            <div class="w-full md:w-1/3">
+                <label for="category" class="sr-only">Service Category</label>
+                <select id="category" name="category" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent shadow-sm">
+                    <option value="" <%= currentCategory === '' ? 'selected' : '' %>>All Categories</option>
+                    <% categories.forEach(cat => { %>
+                        <option value="<%= cat %>" <%= currentCategory === cat ? 'selected' : '' %>>
+                            <%= cat %>
+                        </option>
+                    <% }) %>
+                </select>
+            </div>
+            
+            <!-- Search Text Input -->
+            <div class="w-full md:w-1/2">
+                <label for="search" class="sr-only">Search by Name or Description</label>
+                <div class="relative">
+                    <input type="text" id="search" name="search" placeholder="Search by name or keyword..." value="<%= currentSearch %>" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-accent focus:border-accent shadow-sm pl-10">
+                    <i class="fas fa-search absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400"></i>
+                </div>
+            </div>
+            
+            <!-- Search Button uses primary background color -->
+            <div class="w-full md:w-1/6">
+                <button type="submit" class="w-full p-3 bg-primary text-white font-semibold rounded-lg hover:bg-primary-dark transition duration-200 shadow-md">
+                    <i class="fas fa-filter mr-1"></i> Search
+                </button>
+            </div>
+        </form>
+    </div>
+
+    <!-- Provider Results List -->
+    <h3 class="text-2xl font-semibold text-primary mb-6 border-b pb-2">Search Results:</h3>
+    
+    <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+        <% if (providers.length === 0) { %>
+            <div class="md:col-span-3 text-center py-10 bg-gray-100 rounded-lg">
+                <i class="fas fa-exclamation-circle text-4xl text-gray-400 mb-4"></i>
+                <p class="text-lg text-gray-600 font-medium">No providers found matching your criteria. Try adjusting your search or category.</p>
+            </div>
+        <% } else { %>
+            <% providers.forEach(provider => { %>
+                <a href="/provider/profile/<%= provider._id %>" class="block">
+                    <div class="bg-white rounded-xl shadow-lg p-5 border-l-4 border-accent hover:shadow-xl transition duration-300 transform hover:-translate-y-1 h-full flex flex-col justify-between">
+                        <div>
+                            <div class="flex items-center space-x-4 mb-3">
+                                <!-- Icon placeholder uses primary color -->
+                                <div class="w-12 h-12 rounded-full bg-primary flex items-center justify-center text-white text-xl font-bold">
+                                    <%= provider.name.charAt(0) %>
+                                </div>
+                                <div>
+                                    <h4 class="text-xl font-bold text-primary"><%= provider.name %></h4>
+                                    <!-- Category icon uses accent color -->
+                                    <p class="text-sm text-gray-600"><i class="fas fa-tools mr-1 text-accent"></i> <%= provider.category %></p>
+                                </div>
+                            </div>
+                            <p class="text-gray-700 text-sm italic line-clamp-3 mb-4">
+                                "<%= provider.description || 'No detailed description provided yet.' %>"
+                            </p>
+                        </div>
+                        
+                        <!-- Rating/Review Stats -->
+                        <div class="flex items-center justify-between pt-3 border-t border-gray-100">
+                            <div class="flex items-center">
+                                <span class="text-lg font-bold text-yellow-500 mr-1"><%= provider.averageRating %></span>
+                                <i class="fas fa-star text-yellow-500 text-sm"></i>
+                                <span class="text-sm text-gray-500 ml-2">(<%= provider.reviewCount %> reviews)</span>
+                            </div>
+                            <span class="text-sm font-semibold text-primary hover:text-accent">View Profile <i class="fas fa-chevron-right ml-1 text-xs"></i></span>
+                        </div>
+                    </div>
+                </a>
+            <% }) %>
+        <% } %>
+    </div>
+</section>
+
+<!-- 5. GET STARTED CTA -->
+<section class="mt-12 py-12 px-6 md:px-12 bg-accent rounded-xl text-center shadow-2xl">
+    <!-- Text uses primary color -->
+    <h2 class="text-3xl md:text-4xl font-extrabold text-primary mb-4">Ready to Find Reliable Help?</h2>
+    <p class="text-lg text-primary mb-8 font-medium">Stop scrolling through endless directories. Start finding quality, pre-vetted service providers today.</p>
+    <!-- CTA buttons use primary and secondary colors effectively -->
+    <a href="#search-section" class="inline-block bg-primary hover:bg-primary-dark text-white font-bold py-3 px-10 rounded-full text-xl shadow-xl transition duration-300 transform hover:scale-105">
+        <i class="fas fa-calendar-alt mr-2"></i> Book Now
+    </a>
+    <a href="/register" class="inline-block bg-white text-primary hover:bg-gray-100 font-bold py-3 px-10 rounded-full text-xl shadow-xl transition duration-300 ml-4">
+        <i class="fas fa-user-plus mr-2"></i> Register as a Provider
+    </a>
+</section>
+
 </div>
 
-<%- include('partials/footer') %>
+<%- include('./partials/foot') %>
