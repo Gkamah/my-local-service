@@ -1,266 +1,219 @@
 <%- include('./partials/head', { title: title }) %>
 
-<div class="container profile-view-container">
-    <div class="profile-card">
-        <header class="profile-header">
-            <div class="profile-photo-lg">
-                <% 
-                    // 1. Photo Logic: Check for Base64 URL and ensure correct prefix
-                    let finalProfileUrl = provider.profilePictureUrl;
-                    if (finalProfileUrl && finalProfileUrl.length > 0 && !finalProfileUrl.startsWith('data:image')) {
-                        // Assuming JPEG/PNG if it's a raw Base64 string (Crucial for rendering)
-                        finalProfileUrl = `data:image/jpeg;base64,${finalProfileUrl}`;
-                    }
-                %>
+<!-- Include Tailwind and Font Awesome for aesthetics and icons -->
+
+<script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
+
+<link rel="stylesheet" href="https://www.google.com/search?q=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+<style>
+/* Custom styling for better aesthetics */
+body {
+font-family: 'Inter', sans-serif;
+background-color: #f4f7f9;
+}
+.profile-card-container {
+min-height: 80vh;
+}
+</style>
+
+<%
+// Helper function to render star icons (copied from public-profile logic)
+function renderStars(rating) {
+let stars = '';
+// Round to nearest whole number for display
+const roundedRating = Math.round(rating || 0);
+for (let i = 0; i < 5; i++) {
+if (i < roundedRating) {
+stars += '<i class="fas fa-star text-yellow-400"></i>';
+} else {
+stars += '<i class="far fa-star text-gray-300"></i>';
+}
+}
+return stars;
+}
+
+// NOTE: Your server.js does not yet populate 'reviews' on the provider object.
+// We mock the structure here so the dashboard doesn't crash.
+// Once review/inquiry routes are added, this structure will be populated by MongoDB.
+
+// MOCK DATA SETUP:
+const allEntries = provider.reviews || []; 
+// Filter out entries that look like reviews (have a rating)
+const reviews = allEntries.filter(entry => (entry.rating || 0) > 0).sort((a, b) => new Date(b.date) - new Date(a.date));
+// Filter out entries that look like inquiries (no rating)
+const inquiries = allEntries.filter(entry => (entry.rating || 0) === 0).sort((a, b) => new Date(b.date) - new Date(a.date));
+const totalReviews = reviews.length;
+
+const sumRatings = reviews.reduce((acc, review) => acc + (review.rating || 0), 0);
+const averageRating = totalReviews > 0 ? (sumRatings / totalReviews) : 0;
+
+// Photo Logic: Ensure the Base64 data URL has the correct prefix
+let finalProfileUrl = provider.profilePictureUrl;
+if (finalProfileUrl && finalProfileUrl.length > 0 && !finalProfileUrl.startsWith('data:image')) {
+    finalProfileUrl = `data:image/jpeg;base64,${finalProfileUrl}`;
+}
+
+%>
+
+<div class="container mx-auto p-4 max-w-6xl mt-10 profile-card-container">
+<!-- Message/Error Display (from session middleware) -->
+<% if (message) { %>
+<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative mb-6 font-medium shadow-md transition-all duration-300" role="alert">
+<i class="fas fa-check-circle mr-2"></i> <span class="block sm:inline"><%= message %></span>
+</div>
+<% } %>
+<% if (error) { %>
+<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mb-6 font-medium shadow-md transition-all duration-300" role="alert">
+<i class="fas fa-exclamation-triangle mr-2"></i> <span class="block sm:inline"><%= error %></span>
+</div>
+<% } %>
+
+<div class="bg-white shadow-2xl rounded-2xl p-6 lg:p-10 border-t-8 border-indigo-600">
+    
+    <!-- Dashboard Header -->
+    <header class="flex flex-col md:flex-row justify-between items-center pb-8 border-b border-indigo-100 mb-8">
+        <h1 class="text-3xl lg:text-4xl font-extrabold text-indigo-800 mb-4 md:mb-0">
+            <i class="fas fa-cogs mr-3 text-indigo-600"></i> Service Provider Dashboard
+        </h1>
+        <a href="/provider/profile/edit"
+            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-xl transition duration-300 shadow-lg hover:shadow-xl">
+            <i class="fas fa-pencil-alt mr-2"></i> Edit Profile
+        </a>
+    </header>
+
+    <!-- Profile Summary and Stats -->
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        
+        <!-- Profile Card -->
+        <div class="lg:col-span-1 bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
+            <h2 class="text-2xl font-bold text-gray-800 border-b pb-3 mb-4 flex items-center">
+                <i class="fas fa-user-circle mr-2 text-indigo-500"></i> My Profile
+            </h2>
+            
+            <div class="flex justify-center mb-6">
                 <% if (finalProfileUrl && finalProfileUrl.startsWith('data:image')) { %>
-                    <!-- Display the actual image, matching the container size -->
-                    <img 
-                        src="<%= finalProfileUrl %>" 
-                        alt="<%= provider.name %> Profile Picture" 
-                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"
-                        onerror="this.onerror=null; this.src='https://placehold.co/100x100/434375/ffffff?text=P';"
-                    >
+                    <img src="<%= finalProfileUrl %>" alt="<%= provider.name %>'s Profile Picture" 
+                         class="w-32 h-32 object-cover rounded-full border-4 border-indigo-400 shadow-xl">
                 <% } else { %>
-                    <!-- Fallback: Font Awesome Icon (Original style) -->
-                    <i class="fas fa-user-circle"></i>
+                    <div class="w-32 h-32 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-400 text-6xl font-extrabold border-4 border-indigo-400 shadow-xl">
+                        <%= provider.name.charAt(0) %>
+                    </div>
                 <% } %>
             </div>
-            <div class="profile-info">
-                <h1><%= provider.name %></h1>
-                <span class="category-badge"><i class="fas fa-tools"></i> <%= provider.category %></span>
-                <p class="status-badge status-success">
-                    <i class="fas fa-certificate"></i> **Verified & Subscribed Professional**
-                </p>
-            </div>
-        </header>
 
-        <section class="contact-details">
-            <h2>Contact Information</h2>
-            <div class="detail-item">
-                <i class="fas fa-envelope icon-primary"></i>
-                <div class="detail-content">
-                    <label>Email Address</label>
-                    <p><%= provider.email %></p>
+            <p class="text-3xl font-extrabold text-center text-gray-900 mb-1"><%= provider.name %></p>
+            <p class="text-lg text-center text-indigo-600 font-semibold mb-6"><%= provider.category %></p>
+
+            <div class="space-y-3 text-gray-700 text-sm">
+                <div class="flex items-center"><i class="fas fa-envelope mr-3 text-indigo-500 w-5"></i> <%= provider.email %></div>
+                <div class="flex items-center"><i class="fas fa-phone mr-3 text-indigo-500 w-5"></i> <%= provider.contactInfo %></div>
+            </div>
+
+            <div class="mt-6 pt-4 border-t border-gray-200 text-center">
+                <a href="/provider/view/<%= provider._id %>" target="_blank" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition duration-150 underline">
+                    <i class="fas fa-eye mr-1"></i> View Public Profile
+                </a>
+            </div>
+        </div>
+
+        <!-- Stats and Description -->
+        <div class="lg:col-span-2 space-y-8">
+            <!-- Statistics -->
+            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
+                <div class="bg-indigo-100 p-4 rounded-xl shadow-lg text-center transform hover:scale-105 transition duration-300">
+                    <p class="text-4xl font-bold text-indigo-800"><%= totalReviews %></p>
+                    <p class="text-sm font-medium text-indigo-600 mt-1">Total Reviews</p>
+                </div>
+                <div class="bg-yellow-100 p-4 rounded-xl shadow-lg text-center transform hover:scale-105 transition duration-300">
+                    <p class="text-4xl font-bold text-yellow-800"><%= averageRating.toFixed(1) %></p>
+                    <p class="text-sm font-medium text-yellow-600 mt-1 flex justify-center items-center">
+                        <i class="fas fa-star mr-1"></i> Average Rating
+                    </p>
+                </div>
+                <div class="bg-purple-100 p-4 rounded-xl shadow-lg text-center transform hover:scale-105 transition duration-300">
+                    <p class="text-4xl font-bold text-purple-800"><%= inquiries.length %></p>
+                    <p class="text-sm font-medium text-purple-600 mt-1">New Inquiries</p>
                 </div>
             </div>
-            <div class="detail-item">
-                <!-- Phone Icon -->
-                <i class="fas fa-phone icon-primary"></i>
-                <div class="detail-content">
-                    <label>Phone / WhatsApp</label>
-                    <p><%= provider.contactInfo %></p>
-                </div>
+
+            <!-- Description -->
+            <div class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200 h-full">
+                <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
+                    <i class="fas fa-clipboard-list mr-2 text-indigo-500"></i> My Service Description
+                </h3>
+                <p class="text-gray-700 whitespace-pre-wrap leading-relaxed italic text-sm">
+                    <%= provider.description || 'You have not added a detailed description yet. Click "Edit Profile" above to add one and attract more customers!' %>
+                </p>
             </div>
-        </section>
-
-        <section class="service-details">
-            <h2>About My Services</h2>
-            <% 
-                // 2. Description Logic: Display actual text or fallback
-                const descriptionText = provider.description ? provider.description.trim() : ''; 
-            %>
-            
-            <% if (descriptionText.length > 0) { %>
-                <p class="bio-text" style="white-space: pre-wrap; border-left-color: #8a2be2; background-color: #f3f3ff;">
-                    <%= descriptionText %>
-                </p>
-            <% } else { %>
-                <p class="bio-text">
-                    This service provider is a verified, active subscriber committed to quality work in the **<%= provider.category %>** field.
-                    **They have not yet added a detailed description of their services.** Contact them directly via the information above to discuss your project and check their availability. 
-                </p>
-            <% } %>
-
-            <p class="commitment-text">
-                <i class="fas fa-heart"></i> Committed to professionalism and customer satisfaction.
-            </p>
-        </section>
+        </div>
+    </div>
+    
+    <!-- REVIEWS and INQUIRIES Section -->
+    <div class="mt-12 pt-8 border-t border-gray-200">
+        <h2 class="text-3xl font-bold text-indigo-800 mb-6 flex items-center"><i class="fas fa-chart-line mr-2"></i> Customer Activity</h2>
         
-        <a href="/search" class="btn-primary back-to-search">
-            <i class="fas fa-arrow-left"></i> Back to Search Results
-        </a>
+        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            
+            <!-- 1. Reviews (Rated) -->
+            <div>
+                <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center text-yellow-700">
+                    <i class="fas fa-thumbs-up mr-2"></i> Customer Reviews
+                </h3>
+                
+                <% if (reviews.length > 0) { %>
+                    <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <% reviews.forEach(review => { %>
+                            <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500 transform hover:shadow-lg transition duration-300">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-bold text-gray-900"><%= review.visitorName %></h4>
+                                    <small class="text-gray-500"><%= new Date(review.date).toLocaleDateString() %></small>
+                                </div>
+                                <div class="mb-2"><%- renderStars(review.rating) %></div>
+                                <p class="text-gray-700 italic text-sm">"<%= review.comment %>"</p>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="p-4 bg-gray-100 rounded-xl text-gray-600 italic border border-gray-200">No rated reviews yet. Your reviews will appear here!</p>
+                <% } %>
+            </div>
 
+            <!-- 2. Inquiries (Unrated) -->
+            <div>
+                <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center text-purple-700">
+                    <i class="fas fa-comment-dots mr-2"></i> New Service Inquiries
+                </h3>
+
+                <% if (inquiries.length > 0) { %>
+                    <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                        <% inquiries.forEach(inquiry => { %>
+                            <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-purple-500 transform hover:shadow-lg transition duration-300">
+                                <div class="flex justify-between items-start mb-2">
+                                    <h4 class="font-bold text-gray-900"><%= inquiry.visitorName %></h4>
+                                    <small class="text-gray-500"><%= new Date(inquiry.date).toLocaleDateString() %></small>
+                                </div>
+                                <p class="text-gray-700 text-sm leading-snug">
+                                    <span class="font-medium text-purple-600">Message:</span> <%= inquiry.comment %>
+                                </p>
+                            </div>
+                        <% }); %>
+                    </div>
+                <% } else { %>
+                    <p class="p-4 bg-gray-100 rounded-xl text-gray-600 italic border border-gray-200">No new inquiries.</p>
+                <% } %>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- Logout Link -->
+    <div class="mt-10 pt-6 border-t border-gray-200 flex justify-center">
+        <a href="/logout" class="text-lg font-medium text-red-600 hover:text-red-800 transition duration-300 p-2 rounded-lg hover:bg-red-50">
+            <i class="fas fa-sign-out-alt mr-1"></i> Log Out
+        </a>
     </div>
 </div>
 
-<style>
-    /* ... (CSS styles remain the same, ensuring compatibility with your existing public/css/style.css) ... */
-    .profile-view-container {
-        max-width: 650px;
-        margin: 3rem auto;
-        padding: 1rem;
-        font-family: Arial, sans-serif;
-    }
-    
-    .profile-card {
-        background: #ffffff;
-        border-radius: 12px;
-        box-shadow: 0 15px 40px rgba(0, 0, 0, 0.1);
-        padding: 2.5rem;
-    }
-
-    .profile-header {
-        display: flex;
-        align-items: center;
-        gap: 25px;
-        padding-bottom: 2rem;
-        margin-bottom: 2rem;
-        border-bottom: 2px solid #f0f0f5;
-    }
-
-    /* Large Profile Photo Placeholder/Container */
-    .profile-photo-lg {
-        width: 100px;
-        height: 100px;
-        border-radius: 50%;
-        background-color: #e6e6fa; /* Light purple tint */
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        border: 4px solid #434375;
-        overflow: hidden; /* Ensures image is clipped to circle */
-    }
-
-    .profile-photo-lg i {
-        font-size: 4rem;
-        color: #8a2be2; /* Blue-violet */
-    }
-
-    .profile-info h1 {
-        font-size: 2rem;
-        color: #1a1a40;
-        margin: 0 0 5px 0;
-    }
-    
-    .category-badge {
-        display: inline-block;
-        padding: 0.4rem 1rem;
-        background-color: #d1e7dd;
-        color: #0f5132;
-        border-radius: 20px;
-        font-weight: 600;
-        font-size: 0.9rem;
-        margin-bottom: 10px;
-    }
-    .category-badge i {
-        margin-right: 5px;
-    }
-
-    .status-badge {
-        font-size: 0.9rem;
-        font-weight: 700;
-        color: #38a169;
-        display: block;
-    }
-    .status-badge i {
-        margin-right: 5px;
-    }
-
-    /* Contact and Service Sections */
-    section {
-        margin-bottom: 2rem;
-        padding-top: 1rem;
-    }
-    
-    section h2 {
-        color: #434375;
-        font-size: 1.3rem;
-        margin-bottom: 1rem;
-        border-bottom: 1px dashed #e0e0e0;
-        padding-bottom: 5px;
-    }
-
-    .detail-item {
-        display: flex;
-        align-items: flex-start;
-        gap: 15px;
-        margin-bottom: 1.5rem;
-    }
-
-    .icon-primary {
-        /* FIX: If the global CSS is making this icon large, the font-size must be reset here */
-        font-size: 1.5rem; 
-        color: #1a1a40;
-        flex-shrink: 0;
-        margin-top: 5px;
-        /* FINAL FIX: Aggressive inline style to ensure icon size is correct */
-        width: 24px;
-        height: 24px;
-    }
-
-    .detail-content label {
-        display: block;
-        font-size: 0.8rem;
-        color: #6c757d;
-        font-weight: 600;
-        text-transform: uppercase;
-        margin-bottom: 2px;
-    }
-
-    .detail-content p {
-        font-size: 1.1rem;
-        color: #333;
-        margin: 0;
-        word-break: break-all;
-    }
-    
-    .bio-text {
-        font-size: 1rem;
-        line-height: 1.6;
-        color: #333;
-        margin-bottom: 1.5rem;
-        background-color: #f9f9ff;
-        padding: 15px;
-        border-left: 5px solid #434375;
-        border-radius: 4px;
-    }
-
-    .commitment-text {
-        color: #1a1a40;
-        font-style: italic;
-        font-weight: 500;
-        font-size: 0.95rem;
-    }
-
-    .commitment-text i {
-        color: #dc3545;
-        margin-right: 5px;
-    }
-    
-    .back-to-search {
-        display: block;
-        width: 100%;
-        text-align: center;
-        margin-top: 2rem;
-        padding: 12px;
-        background-color: #6c757d;
-        color: white;
-        border-radius: 8px;
-        text-decoration: none;
-        transition: background-color 0.3s;
-    }
-    
-    .back-to-search:hover {
-        background-color: #5a6268;
-    }
-    
-    /* Responsive adjustments */
-    @media (max-width: 600px) {
-        .profile-card {
-            padding: 1.5rem;
-        }
-        .profile-header {
-            flex-direction: column;
-            text-align: center;
-        }
-        .profile-info {
-            text-align: center;
-        }
-        .profile-info h1 {
-            font-size: 1.75rem;
-        }
-    }
-</style>
+</div>
 
 <%- include('./partials/footer') %>
