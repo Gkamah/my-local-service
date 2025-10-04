@@ -1,5 +1,51 @@
-</main> <footer>
-    <p>&copy; <%= new Date().getFullYear() %> My Local Service</p>
+</main>
+
+<!-- Footer Section -->
+<footer class="bg-primary text-white mt-10">
+    <div class="max-w-7xl mx-auto py-8 px-4 sm:px-6 lg:px-8">
+        <div class="grid grid-cols-2 md:grid-cols-4 gap-8">
+            <!-- Column 1: Brand -->
+            <div class="space-y-3">
+                <h4 class="text-xl font-bold text-accent">MyLocalService</h4>
+                <p class="text-sm text-gray-300">Connecting you with trusted local professionals, fast.</p>
+            </div>
+            
+            <!-- Column 2: Quick Links -->
+            <div>
+                <h5 class="text-lg font-semibold mb-3">Quick Links</h5>
+                <ul class="space-y-2">
+                    <li><a href="/" class="text-sm text-gray-300 hover:text-accent transition duration-150">Home</a></li>
+                    <li><a href="#services" class="text-sm text-gray-300 hover:text-accent transition duration-150">Services</a></li>
+                    <li><a href="#how-it-works" class="text-sm text-gray-300 hover:text-accent transition duration-150">How It Works</a></li>
+                </ul>
+            </div>
+            
+            <!-- Column 3: Account -->
+            <div>
+                <h5 class="text-lg font-semibold mb-3">Account</h5>
+                <ul class="space-y-2">
+                    <li><a href="/login" class="text-sm text-gray-300 hover:text-accent transition duration-150">Login</a></li>
+                    <li><a href="/register" class="text-sm text-gray-300 hover:text-accent transition duration-150">Register</a></li>
+                    <li><a href="/provider/profile" class="text-sm text-gray-300 hover:text-accent transition duration-150">Provider Profile</a></li>
+                </ul>
+            </div>
+
+            <!-- Column 4: Contact/Legal -->
+            <div>
+                <h5 class="text-lg font-semibold mb-3">Support</h5>
+                <ul class="space-y-2">
+                    <li><a href="/contact" class="text-sm text-gray-300 hover:text-accent transition duration-150">Contact Us</a></li>
+                    <li><a href="/terms" class="text-sm text-gray-300 hover:text-accent transition duration-150">Terms & Privacy</a></li>
+                    <li><a href="/forgot-password" class="text-sm text-gray-300 hover:text-accent transition duration-150">Forgot Password</a></li>
+                </ul>
+            </div>
+        </div>
+        
+        <div class="mt-8 pt-6 border-t border-gray-700 text-center">
+            <p class="text-sm text-gray-400">&copy; <%= new Date().getFullYear() %> MyLocalService. All rights reserved.</p>
+        </div>
+    </div>
 </footer>
+
 </body>
 </html>

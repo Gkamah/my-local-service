@@ -1,11 +1,155 @@
 <!DOCTYPE html>
+
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>My Local Service | <%= title || 'Find Local Services' %></title>
-    <link rel="stylesheet" href="/css/style.css">
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+<!-- SEO & Accessibility -->
+<title><%= title %> | My Local Service – Fast, Reliable Help Nearby</title>
+<meta name="description" content="Find trusted local services like Plumbers, Electricians, and Cleaners in your area. Book quality professionals quickly and easily.">
+<meta name="keywords" content="local service, plumber, electrician, cleaner, handyman, local professionals, find help">
+<meta name="author" content="My Local Service">
+
+<!-- Open Graph for Social Sharing -->
+<meta property="og:title" content="<%= title %> | My Local Service">
+<meta property="og:description" content="Find trusted local services like Plumbers, Electricians, and Cleaners in your area.">
+<meta property="og:type" content="website">
+
+<!-- Load Tailwind CSS & Custom Colors -->
+<script src="https://cdn.tailwindcss.com"></script>
+<!-- Load Font Awesome Icons -->
+<link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+
+<style>
+    :root {
+        --color-primary: #1E3A8A; /* Navy Blue for Trust */
+        --color-accent: #10B981; /* Green for Local/Vibes */
+    }
+    
+    body {
+        font-family: 'Inter', sans-serif;
+        background-color: #f8fafd;
+        color: #333;
+    }
+
+    /* Apply custom colors to Tailwind classes */
+    .bg-primary { background-color: var(--color-primary); }
+    .text-primary { color: var(--color-primary); }
+    .border-primary { border-color: var(--color-primary); }
+    .hover\:bg-primary-dark:hover { background-color: #1a3070; }
+
+    .bg-accent { background-color: var(--color-accent); }
+    .text-accent { color: var(--color-accent); }
+    .border-accent { border-color: var(--color-accent); }
+    .hover\:bg-accent-dark:hover { background-color: #0c9b6c; }
+
+    /* Custom scrollbar for better feel */
+    ::-webkit-scrollbar { width: 8px; }
+    ::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; }
+    ::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
+    
+    /* Mobile adjustment for flash messages */
+    .flash-message {
+        position: fixed;
+        top: 70px; /* Below the navbar */
+        left: 50%;
+        transform: translateX(-50%);
+        z-index: 50;
+        width: 90%;
+        max-width: 500px;
+    }
+</style>
+
 </head>
-<body>
-    <%- include('header') %>
-    <main class="container">
+<body class="min-h-screen flex flex-col">
+
+<!-- Navigation Bar -->
+<nav class="bg-white shadow-md sticky top-0 z-40">
+    <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div class="flex justify-between items-center h-16">
+            <!-- Logo/Brand -->
+            <a href="/" class="flex-shrink-0 flex items-center">
+                <i class="fas fa-handshake text-3xl text-primary mr-2"></i>
+                <span class="text-2xl font-bold text-primary">MyLocalService</span>
+            </a>
+            
+            <!-- Desktop Navigation Links -->
+            <div class="hidden md:flex md:space-x-4 items-center">
+                <a href="/" class="text-gray-700 hover:text-accent font-medium px-3 py-2 rounded-md transition duration-150">Home</a>
+                <a href="#services" class="text-gray-700 hover:text-accent font-medium px-3 py-2 rounded-md transition duration-150">Services</a>
+                <a href="#how-it-works" class="text-gray-700 hover:text-accent font-medium px-3 py-2 rounded-md transition duration-150">How It Works</a>
+                
+                <% if (isLoggedIn) { %>
+                    <% if (userRole === 'provider') { %>
+                        <a href="/provider/dashboard" class="text-gray-700 hover:text-accent font-medium px-3 py-2 rounded-md transition duration-150">Dashboard</a>
+                    <% } %>
+                    <a href="/logout" class="bg-red-500 text-white hover:bg-red-600 font-medium px-4 py-2 rounded-full shadow-lg transition duration-150 ml-4">
+                        <i class="fas fa-sign-out-alt mr-1"></i> Logout
+                    </a>
+                <% } else { %>
+                    <a href="/register" class="text-primary hover:text-accent font-medium px-3 py-2 rounded-md transition duration-150">Register</a>
+                    <a href="/login" class="bg-accent text-white hover:bg-accent-dark font-medium px-4 py-2 rounded-full shadow-lg transition duration-150 ml-4">
+                        <i class="fas fa-user-circle mr-1"></i> Login
+                    </a>
+                <% } %>
+            </div>
+
+            <!-- Mobile Menu Button (Hamburger) -->
+            <div class="md:hidden">
+                <button id="mobile-menu-button" class="text-gray-500 hover:text-primary p-2 rounded-md focus:outline-none">
+                    <i class="fas fa-bars text-xl"></i>
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Mobile Menu (Hidden by default) -->
+    <div id="mobile-menu" class="hidden md:hidden bg-white border-t border-gray-100 py-2">
+        <a href="/" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-accent">Home</a>
+        <a href="#services" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-accent">Services</a>
+        <a href="#how-it-works" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-accent">How It Works</a>
+        <% if (isLoggedIn) { %>
+            <% if (userRole === 'provider') { %>
+                <a href="/provider/dashboard" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-accent">Dashboard</a>
+            <% } %>
+            <a href="/logout" class="block px-4 py-2 text-red-500 hover:bg-gray-100 hover:text-red-600">Logout</a>
+        <% } else { %>
+            <a href="/register" class="block px-4 py-2 text-gray-700 hover:bg-gray-100 hover:text-accent">Register</a>
+            <a href="/login" class="block px-4 py-2 text-primary hover:bg-gray-100 hover:text-accent">Login</a>
+        <% } %>
+    </div>
+</nav>
+
+<!-- Flash Messages Display -->
+<% if (error) { %>
+    <div class="flash-message bg-red-100 border-l-4 border-red-500 text-red-700 p-4 rounded shadow-lg transition duration-300 ease-in-out" role="alert">
+        <p class="font-bold"><i class="fas fa-exclamation-triangle mr-2"></i> Error</p>
+        <p><%= error %></p>
+    </div>
+<% } %>
+
+<% if (message) { %>
+    <div class="flash-message bg-green-100 border-l-4 border-accent text-green-700 p-4 rounded shadow-lg transition duration-300 ease-in-out" role="alert">
+        <p class="font-bold"><i class="fas fa-check-circle mr-2"></i> Success</p>
+        <p><%= message %></p>
+    </div>
+<% } %>
+
+<script>
+    document.getElementById('mobile-menu-button').addEventListener('click', () => {
+        const menu = document.getElementById('mobile-menu');
+        menu.classList.toggle('hidden');
+    });
+    
+    // Auto-hide flash messages after 5 seconds
+    document.querySelectorAll('.flash-message').forEach(el => {
+        setTimeout(() => {
+            el.classList.add('opacity-0');
+            el.classList.add('pointer-events-none');
+            setTimeout(() => el.remove(), 500); // Remove after transition
+        }, 5000);
+    });
+</script>
+
+<main class="flex-grow">
