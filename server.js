@@ -20,9 +20,17 @@ const UserSchema = new mongoose.Schema({
     contactInfo: { type: String },
     category: { type: String },
     
-    // NEW FIELDS for Profile Picture and Description
+    // FIELDS for Profile Picture and Description
     description: { type: String, default: '' }, 
-    profilePictureUrl: { type: String, default: '' } 
+    profilePictureUrl: { type: String, default: '' },
+    
+    // NEW FIELD for Reviews/Inquiries
+    reviews: [{
+        visitorName: { type: String, required: true },
+        rating: { type: Number, default: 0 }, // 0 for inquiry, 1-5 for review
+        comment: { type: String, required: true },
+        date: { type: Date, default: Date.now }
+    }]
 });
 
 // Hash the password before saving
@@ -57,7 +65,6 @@ app.set('views', path.join(__dirname, 'views'));
 app.use(express.static(path.join(__dirname, 'public')));
 
 // Middleware for parsing large JSON and URL-encoded bodies
-// IMPORTANT FIX: Increased limit to 50MB to handle large Base64 image data
 app.use(express.json({ limit: '50mb' })); 
 app.use(express.urlencoded({ extended: true, limit: '50mb' })); 
 
@@ -312,35 +319,22 @@ app.get('/provider/profile/edit', isAuthenticated, isProvider, async (req, res) 
 // 5.3 PROVIDER EDIT - Process
 app.post('/provider/edit', isAuthenticated, isProvider, async (req, res) => {
     try {
-        // --- START DEBUG LOGGING ---
-        console.log('--- Incoming Provider Edit Data ---');
-        console.log('Description length:', req.body.description ? req.body.description.length : 0);
-        console.log('Picture Data length:', req.body.profilePictureData ? req.body.profilePictureData.length : 0);
-        console.log('Other fields:', { 
-            name: req.body.name, 
-            category: req.body.category 
-        });
-        console.log('-----------------------------------');
-        // --- END DEBUG LOGGING ---
-        
-        // Capture new fields: description and profile picture data
         const { 
             name, 
             contactInfo, 
             category, 
-            description, // NEW FIELD
-            profilePictureData // NEW FIELD (Base64 string from form)
+            description,
+            profilePictureData
         } = req.body;
 
         const updateData = {
             name,
             contactInfo,
             category,
-            // CRITICAL FIX: Ensure description is saved
             description: description || '', 
         };
 
-        // CRITICAL FIX: Only update the profile picture if new data was provided
+        // Only update the profile picture if new data was provided
         if (profilePictureData && profilePictureData.length > 0) {
             updateData.profilePictureUrl = profilePictureData;
         }
@@ -357,11 +351,69 @@ app.post('/provider/edit', isAuthenticated, isProvider, async (req, res) => {
 });
 
 
-// 5.4 PROVIDER VIEW ROUTE (Public Profile)
+// 5.4 NEW FEATURE: Review and Inquiry Submission Route
+app.post('/provider/review/:id', async (req, res) => {
+    const providerId = req.params.id;
+    const { visitorName, rating, comment } = req.body;
+
+    // Basic validation
+    if (!visitorName || !comment) {
+        req.session.reviewError = 'Please provide your name and a message/review.';
+        return res.redirect(`/provider/view/${providerId}`);
+    }
+
+    try {
+        const provider = await User.findById(providerId);
+
+        if (!provider) {
+            req.session.reviewError = 'Provider not found.';
+            return res.status(404).redirect('/');
+        }
+        
+        // Prepare the new entry
+        const newEntry = {
+            visitorName,
+            // Convert rating to Number. Default to 0 if not provided/invalid.
+            rating: parseInt(rating) || 0, 
+            comment,
+            date: new Date()
+        };
+
+        // Use $push to add the new review/inquiry to the reviews array
+        await User.findByIdAndUpdate(providerId, { 
+            $push: { reviews: newEntry } 
+        });
+
+        // Set success message based on whether a rating was provided
+        req.session.reviewMessage = newEntry.rating > 0
+            ? 'Thank you! Your review has been submitted and is now visible.' 
+            : 'Thank you! Your inquiry has been sent to the provider.';
+            
+        // Redirect back to the public profile to show the new review/message
+        res.redirect(`/provider/view/${providerId}`);
+
+    } catch (error) {
+        console.error('Review submission error:', error);
+        req.session.reviewError = 'An internal error occurred while submitting your review/inquiry.';
+        res.redirect(`/provider/view/${providerId}`);
+    }
+});
+
+
+// 5.5 PROVIDER VIEW ROUTE (Public Profile) - MODIFIED TO HANDLE FLASH MESSAGES
 app.get('/provider/view/:id', async (req, res) => {
+    // --- START Flash Message Handling ---
+    const reviewMessage = req.session.reviewMessage;
+    const reviewError = req.session.reviewError;
+    // Delete the session variables immediately after reading them
+    delete req.session.reviewMessage;
+    delete req.session.reviewError;
+    // --- END Flash Message Handling ---
+    
     try {
         const providerId = req.params.id;
-        const provider = await User.findById(providerId).select('-password');
+        // Use .lean() for faster read and retrieve all data including reviews
+        const provider = await User.findById(providerId).select('-password').lean();
 
         if (!provider || provider.role !== 'provider') {
             return res.status(404).render('404', { title: 'Provider Not Found' });
@@ -370,7 +422,9 @@ app.get('/provider/view/:id', async (req, res) => {
         // Renders the public-profile.ejs file with the provider data
         res.render('public-profile', { 
             title: `${provider.name}'s Profile`, 
-            provider
+            provider,
+            reviewMessage, // Pass message
+            reviewError    // Pass error
         });
     } catch (error) {
         console.error('Public Profile Load Error:', error);
@@ -379,12 +433,12 @@ app.get('/provider/view/:id', async (req, res) => {
 });
 
 
-// 5.5 FORGOT PASSWORD - Form
+// 5.6 FORGOT PASSWORD - Form
 app.get('/forgot-password', (req, res) => {
     res.render('forgot-password', { title: 'Forgot Password' });
 });
 
-// 5.6 FORGOT PASSWORD - Process (Placeholder)
+// 5.7 FORGOT PASSWORD - Process (Placeholder)
 app.post('/forgot-password', async (req, res) => {
     const { email } = req.body;
     
