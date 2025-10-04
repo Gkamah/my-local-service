@@ -268,17 +268,21 @@ app.post('/register', async (req, res) => {
 // 5.1 PROVIDER PROFILE - View Dashboard
 app.get('/provider/profile', isAuthenticated, isProvider, async (req, res) => {
     try {
-        const provider = await User.findById(req.session.userId).select('-password');
+        // Find provider and exclude password
+        const provider = await User.findById(req.session.userId).select('-password').lean(); // Use .lean() for slightly faster read
         
         if (!provider) {
             req.session.error = 'Provider profile not found.';
             return res.redirect('/logout');
         }
         
+        // --- FIX: Ensure uniqueCategories are passed to prevent EJS rendering errors ---
+        const uniqueCategories = [...baseCategories, ...await User.distinct('category', { role: 'provider' })].filter(Boolean);
+
         res.render('provider-profile', { 
             title: `${provider.name}'s Dashboard`, 
             provider,
-            baseCategories 
+            uniqueCategories // Pass the comprehensive list
         });
         
     } catch (error) {
@@ -400,7 +404,7 @@ app.post('/provider/review/:id', async (req, res) => {
 });
 
 
-// 5.5 PROVIDER VIEW ROUTE (Public Profile) - MODIFIED TO HANDLE FLASH MESSAGES
+// 5.5 PROVIDER VIEW ROUTE (Public Profile) - MODIFIED TO HANDLE REVIEWS/FLASH MESSAGES
 app.get('/provider/view/:id', async (req, res) => {
     // --- START Flash Message Handling ---
     const reviewMessage = req.session.reviewMessage;
