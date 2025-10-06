@@ -1,253 +1,55 @@
-/* public/css/style.css */
+/* ------------------------------------------------------------------- */
+/* GLOBAL STYLES & COLOR PALETTE */
+/* ------------------------------------------------------------------- */
 
-/* === 1. Simple Reset === */
-*,
-*::before,
-*::after {
-    box-sizing: border-box; 
-    margin: 0;
-    padding: 0;
-}
-
-/* === 2. Global Variables and Base Styles === */
 :root {
-    --primary-color: #007bff;
-    --secondary-color: #6c757d;
-    --success-color: #28a745;
-    --warning-color: #ffc107;
-    --danger-color: #dc3545;
-    --bg-light: #f4f4f9;
-    --text-dark: #333;
-    --border-color: #ccc;
+    --color-primary: #4f46e5;      /* Tailwind Indigo-600 */
+    --color-primary-dark: #4338ca; /* Tailwind Indigo-700 */
+    --color-accent: #f59e0b;       /* Tailwind Amber-500 (for ratings/highlights) */
+    --color-background: #f8fafc;   /* Tailwind Slate-50 */
+    --color-text-dark: #1f2937;    /* Tailwind Gray-800 */
+    --color-text-medium: #6b7280;  /* Tailwind Gray-500 */
+    --border-radius-xl: 1rem;      /* 16px */
 }
 
 body {
-    font-family: Arial, sans-serif;
-    line-height: 1.6;
-    background-color: var(--bg-light); 
-    color: var(--text-dark);
-    min-height: 100vh;
+    font-family: 'Inter', sans-serif;
+    background-color: var(--color-background);
+    color: var(--color-text-dark);
 }
 
-.container {
-    max-width: 1200px;
-    margin: 0 auto;
-    padding: 1rem 1.5rem;
+/* Custom shadow for containers */
+.container-shadow {
+    box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08);
 }
 
-h1, h2, h3 {
-    margin-bottom: 1rem;
-    color: #1a1a40;
-}
-
-/* === 3. Navbar and Header (Responsive) === */
-.navbar {
-    background-color: #fff;
-    padding: 1rem 1.5rem;
-    box-shadow: 0 2px 4px rgba(0,0,0,0.1);
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap; /* Allows wrapping on small screens */
-}
-
-.navbar .logo {
-    font-size: 1.5rem;
-    font-weight: bold;
-    color: var(--primary-color);
-}
-
-.navbar .nav-links {
-    display: flex;
-    gap: 15px;
-}
-
-.navbar .nav-links a {
-    color: var(--text-dark);
-    text-decoration: none;
-    padding: 0.5rem 0;
-    white-space: nowrap;
-}
-
-.navbar .nav-links a:hover {
-    color: var(--primary-color);
-    border-bottom: 2px solid var(--primary-color);
-}
-
-/* Mobile Navbar Adjustments */
-@media (max-width: 768px) {
-    .navbar {
-        flex-direction: column;
-        align-items: flex-start;
-    }
-    .navbar .logo {
-        margin-bottom: 10px;
-    }
-    .navbar .nav-links {
-        width: 100%;
-        justify-content: space-around;
-        gap: 0;
-    }
-    .navbar .nav-links a {
-        padding: 0.5rem 10px;
-        font-size: 0.9rem;
-    }
-}
-
-
-/* === 4. Hero Section & Search Form (Responsive) === */
-.hero-section {
-    text-align: center;
-    padding: 3rem 1rem; /* Reduced padding for mobile */
-    background-color: #e9ecef;
-    margin-bottom: 2rem;
-    border-radius: 8px;
-}
-
-.hero-section h1 {
-    font-size: 2.5rem;
-    margin-bottom: 0.5rem;
-}
-
-.search-form {
-    display: flex;
-    justify-content: center;
-    gap: 10px;
-    margin-top: 1.5rem;
-    flex-wrap: wrap; /* Allows stacking on mobile */
-}
-
-.search-form input[type="text"],
-.search-form select {
-    padding: 0.75rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-    width: 300px; /* Default width */
-}
-
-.search-form button {
-    white-space: nowrap;
-}
-
-/* Mobile Search Form Adjustments */
-@media (max-width: 600px) {
-    .hero-section h1 {
-        font-size: 2rem;
-    }
-    .search-form {
-        flex-direction: column;
-        align-items: center;
-    }
-    .search-form input[type="text"],
-    .search-form select,
-    .search-form button {
-        width: 100%; /* Full width for better tapping */
-        max-width: 350px;
-    }
-}
-
-
-/* === 5. Forms (Login/Register/Forgot Password - Responsive) === */
-.form-container {
-    max-width: 450px;
-    margin: 3rem auto;
-    padding: 2rem;
-    background: #fff;
-    border-radius: 8px;
-    box-shadow: 0 4px 8px rgba(0,0,0,0.1);
-}
-
-/* Mobile Form Adjustments */
-@media (max-width: 500px) {
-    .form-container {
-        margin: 1rem; /* Better margin on tiny screens */
-        padding: 1.5rem;
-    }
-}
-
-.form-container label {
-    display: block;
-    margin-bottom: 0.5rem;
-    font-weight: bold;
-}
-
-.form-container input,
-.form-container select {
-    width: 100%;
-    padding: 0.75rem;
-    margin-bottom: 1rem;
-    border: 1px solid var(--border-color);
-    border-radius: 4px;
-}
-
-/* === 6. Buttons === */
-.btn-primary, .btn-secondary {
-    display: inline-block;
-    padding: 0.75rem 1.5rem;
-    font-size: 1rem;
-    cursor: pointer;
-    border: none;
-    border-radius: 5px;
-    text-align: center;
-    transition: background-color 0.3s;
-}
+/* ------------------------------------------------------------------- */
+/* UTILITY STYLES FOR EJS TEMPLATES */
+/* (Used in conjunction with Tailwind classes) */
+/* ------------------------------------------------------------------- */
 
 .btn-primary {
-    background-color: var(--primary-color);
+    background-color: var(--color-primary);
     color: white;
+    font-weight: 700;
+    border-radius: var(--border-radius-xl);
+    transition: background-color 0.2s, transform 0.2s;
 }
 
 .btn-primary:hover {
-    background-color: #0056b3;
+    background-color: var(--color-primary-dark);
+    transform: translateY(-1px);
 }
 
-.btn-secondary {
-    background-color: var(--secondary-color);
-    color: white;
-    margin-top: 10px;
+.review-star {
+    color: var(--color-accent);
 }
 
-/* === 7. Messages & Alerts === */
-.error-message {
-    color: var(--danger-color);
-    padding: 0.5rem;
-    border: 1px solid var(--danger-color);
-    background-color: #f8d7da;
-    border-radius: 4px;
-    margin-bottom: 1rem;
-    text-align: center;
+/* Scrollbar styling for better look on large lists */
+#providerList::-webkit-scrollbar {
+    width: 8px;
 }
-
-.alert {
-    padding: 1rem;
-    border-radius: 5px;
-    margin-bottom: 1rem;
-    font-weight: bold;
-}
-
-.alert.success {
-    background-color: #d4edda;
-    color: var(--success-color);
-    border-color: #c3e6cb;
-}
-
-.alert.warning {
-    background-color: #fff3cd;
-    color: #856404;
-    border-color: #ffeeba;
-}
-
-.alert.danger {
-    background-color: #f8d7da;
-    color: var(--danger-color);
-    border-color: #f5c6cb;
-}
-
-/* === 8. Footer === */
-footer {
-    text-align: center;
-    padding: 1rem 0;
-    margin-top: 2rem;
-    border-top: 1px solid var(--border-color);
-    color: var(--secondary-color);
+#providerList::-webkit-scrollbar-thumb {
+    background-color: #cbd5e1; /* Slate-300 */
+    border-radius: 10px;
 }
