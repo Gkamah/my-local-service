@@ -1,219 +1,306 @@
 <%- include('./partials/head', { title: title }) %>
 
-<!-- Include Tailwind and Font Awesome for aesthetics and icons -->
-
-<script src="https://www.google.com/search?q=https://cdn.tailwindcss.com"></script>
-
-<link rel="stylesheet" href="https://www.google.com/search?q=https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
 <style>
-/* Custom styling for better aesthetics */
-body {
-font-family: 'Inter', sans-serif;
-background-color: #f4f7f9;
-}
-.profile-card-container {
-min-height: 80vh;
-}
+    /* Custom Tailwind/CSS overrides for aesthetic appeal */
+    body {
+        background-color: #f7f9fc;
+        font-family: 'Inter', sans-serif;
+    }
+    .profile-view-container {
+        max-width: 800px;
+        margin: 3rem auto;
+        padding: 0 1rem;
+    }
+    .profile-card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
+        padding: 2rem;
+        transition: transform 0.3s ease;
+    }
+    .profile-header {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2rem;
+        border-bottom: 1px solid #eee;
+        padding-bottom: 1.5rem;
+    }
+    .profile-photo-lg {
+        width: 100px;
+        height: 100px;
+        border-radius: 50%;
+        background-color: #434375;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 40px;
+        color: white;
+        margin-right: 1.5rem;
+        overflow: hidden;
+        border: 4px solid #fff;
+        box-shadow: 0 0 0 2px #434375;
+    }
+    .profile-photo-lg img {
+        object-fit: cover;
+    }
+    .rating-badge {
+        background-color: #4CAF50; /* Green color for rating */
+        color: white;
+        padding: 0.25rem 0.6rem;
+        border-radius: 9999px;
+        font-weight: 700;
+        font-size: 0.9rem;
+        display: inline-flex;
+        align-items: center;
+        margin-left: 0.75rem;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+    }
+    .rating-badge i {
+        margin-right: 0.25rem;
+        font-size: 0.8rem;
+    }
+    .review-section {
+        margin-top: 2rem;
+        padding-top: 1.5rem;
+        border-top: 1px solid #eee;
+    }
+    .review-item {
+        background-color: #f0f4f8;
+        padding: 1rem;
+        border-radius: 8px;
+        margin-bottom: 1rem;
+    }
+    .review-rating {
+        color: #ffc107; /* Star color */
+    }
+    .review-form-card {
+        background-color: #ffffff;
+        padding: 2rem;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
+        margin-top: 2rem;
+        border-top: 5px solid #434375;
+    }
+    .form-group label {
+        font-weight: 600;
+        color: #333;
+    }
+    .form-group input, .form-group textarea, .form-group select {
+        border-radius: 6px;
+        border: 1px solid #ccc;
+        padding: 0.75rem;
+        width: 100%;
+        margin-top: 0.5rem;
+        transition: border-color 0.3s;
+    }
+    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
+        border-color: #434375;
+        box-shadow: 0 0 0 3px rgba(67, 67, 117, 0.2);
+        outline: none;
+    }
+    .btn-submit {
+        background-color: #434375;
+        color: white;
+        font-weight: 700;
+        padding: 0.75rem 1.5rem;
+        border-radius: 8px;
+        transition: background-color 0.3s;
+    }
+    .btn-submit:hover {
+        background-color: #1a1a40;
+    }
+    .star-rating {
+        display: flex;
+        direction: rtl;
+        justify-content: start;
+        align-items: center;
+    }
+    .star-rating input[type="radio"] {
+        display: none;
+    }
+    .star-rating label {
+        cursor: pointer;
+        width: 30px;
+        height: 30px;
+        padding: 5px;
+        color: #ddd; /* Default grey star */
+        font-size: 25px;
+        transition: color 0.2s;
+    }
+    .star-rating label:hover,
+    .star-rating label:hover ~ label,
+    .star-rating input[type="radio"]:checked ~ label {
+        color: #ffc107; /* Yellow star */
+    }
+
 </style>
 
-<%
-// Helper function to render star icons (copied from public-profile logic)
-function renderStars(rating) {
-let stars = '';
-// Round to nearest whole number for display
-const roundedRating = Math.round(rating || 0);
-for (let i = 0; i < 5; i++) {
-if (i < roundedRating) {
-stars += '<i class="fas fa-star text-yellow-400"></i>';
-} else {
-stars += '<i class="far fa-star text-gray-300"></i>';
-}
-}
-return stars;
-}
-
-// NOTE: Your server.js does not yet populate 'reviews' on the provider object.
-// We mock the structure here so the dashboard doesn't crash.
-// Once review/inquiry routes are added, this structure will be populated by MongoDB.
-
-// MOCK DATA SETUP:
-const allEntries = provider.reviews || []; 
-// Filter out entries that look like reviews (have a rating)
-const reviews = allEntries.filter(entry => (entry.rating || 0) > 0).sort((a, b) => new Date(b.date) - new Date(a.date));
-// Filter out entries that look like inquiries (no rating)
-const inquiries = allEntries.filter(entry => (entry.rating || 0) === 0).sort((a, b) => new Date(b.date) - new Date(a.date));
-const totalReviews = reviews.length;
-
-const sumRatings = reviews.reduce((acc, review) => acc + (review.rating || 0), 0);
-const averageRating = totalReviews > 0 ? (sumRatings / totalReviews) : 0;
-
-// Photo Logic: Ensure the Base64 data URL has the correct prefix
-let finalProfileUrl = provider.profilePictureUrl;
-if (finalProfileUrl && finalProfileUrl.length > 0 && !finalProfileUrl.startsWith('data:image')) {
-    finalProfileUrl = `data:image/jpeg;base64,${finalProfileUrl}`;
-}
-
-%>
-
-<div class="container mx-auto p-4 max-w-6xl mt-10 profile-card-container">
-<!-- Message/Error Display (from session middleware) -->
-<% if (message) { %>
-<div class="bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded-xl relative mb-6 font-medium shadow-md transition-all duration-300" role="alert">
-<i class="fas fa-check-circle mr-2"></i> <span class="block sm:inline"><%= message %></span>
-</div>
-<% } %>
-<% if (error) { %>
-<div class="bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded-xl relative mb-6 font-medium shadow-md transition-all duration-300" role="alert">
-<i class="fas fa-exclamation-triangle mr-2"></i> <span class="block sm:inline"><%= error %></span>
-</div>
-<% } %>
-
-<div class="bg-white shadow-2xl rounded-2xl p-6 lg:p-10 border-t-8 border-indigo-600">
-    
-    <!-- Dashboard Header -->
-    <header class="flex flex-col md:flex-row justify-between items-center pb-8 border-b border-indigo-100 mb-8">
-        <h1 class="text-3xl lg:text-4xl font-extrabold text-indigo-800 mb-4 md:mb-0">
-            <i class="fas fa-cogs mr-3 text-indigo-600"></i> Service Provider Dashboard
-        </h1>
-        <a href="/provider/profile/edit"
-            class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-2 px-6 rounded-xl transition duration-300 shadow-lg hover:shadow-xl">
-            <i class="fas fa-pencil-alt mr-2"></i> Edit Profile
-        </a>
-    </header>
-
-    <!-- Profile Summary and Stats -->
-    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
-        
-        <!-- Profile Card -->
-        <div class="lg:col-span-1 bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200">
-            <h2 class="text-2xl font-bold text-gray-800 border-b pb-3 mb-4 flex items-center">
-                <i class="fas fa-user-circle mr-2 text-indigo-500"></i> My Profile
-            </h2>
-            
-            <div class="flex justify-center mb-6">
+<div class="container profile-view-container">
+    <div class="profile-card">
+        <header class="profile-header">
+            <div class="profile-photo-lg">
+                <% 
+                    // 1. Photo Logic: Check for Base64 URL and ensure correct prefix
+                    let finalProfileUrl = provider.profilePictureUrl;
+                    if (finalProfileUrl && finalProfileUrl.length > 0 && !finalProfileUrl.startsWith('data:image')) {
+                        // Assuming JPEG/PNG if it's a raw Base64 string (Crucial for rendering)
+                        finalProfileUrl = `data:image/jpeg;base64,${finalProfileUrl}`;
+                    }
+                %>
                 <% if (finalProfileUrl && finalProfileUrl.startsWith('data:image')) { %>
-                    <img src="<%= finalProfileUrl %>" alt="<%= provider.name %>'s Profile Picture" 
-                         class="w-32 h-32 object-cover rounded-full border-4 border-indigo-400 shadow-xl">
+                    <!-- Display the actual image, matching the container size -->
+                    <img 
+                        src="<%= finalProfileUrl %>" 
+                        alt="<%= provider.name %> Profile Picture" 
+                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"
+                        onerror="this.onerror=null; this.src='https://placehold.co/100x100/434375/ffffff?text=P';"
+                    >
                 <% } else { %>
-                    <div class="w-32 h-32 bg-indigo-100 rounded-full flex items-center justify-center text-indigo-400 text-6xl font-extrabold border-4 border-indigo-400 shadow-xl">
-                        <%= provider.name.charAt(0) %>
-                    </div>
+                    <!-- Fallback: Font Awesome Icon (Original style) -->
+                    <i class="fas fa-user-circle"></i>
                 <% } %>
             </div>
-
-            <p class="text-3xl font-extrabold text-center text-gray-900 mb-1"><%= provider.name %></p>
-            <p class="text-lg text-center text-indigo-600 font-semibold mb-6"><%= provider.category %></p>
-
-            <div class="space-y-3 text-gray-700 text-sm">
-                <div class="flex items-center"><i class="fas fa-envelope mr-3 text-indigo-500 w-5"></i> <%= provider.email %></div>
-                <div class="flex items-center"><i class="fas fa-phone mr-3 text-indigo-500 w-5"></i> <%= provider.contactInfo %></div>
+            <div class="profile-info">
+                <h1 class="text-4xl font-bold text-gray-900 mb-1 flex items-center">
+                    <%= provider.name %>
+                    <% if (provider.averageRating !== 'N/A') { %>
+                        <span class="rating-badge">
+                            <i class="fas fa-star"></i> <%= provider.averageRating %>
+                        </span>
+                    <% } %>
+                </h1>
+                <p class="text-xl text-indigo-700 font-semibold mb-2"><%= provider.category %> Specialist</p>
+                <p class="text-gray-500"><i class="fas fa-users mr-1"></i> <%= provider.reviewCount %> total reviews</p>
             </div>
+        </header>
 
-            <div class="mt-6 pt-4 border-t border-gray-200 text-center">
-                <a href="/provider/view/<%= provider._id %>" target="_blank" class="text-sm font-medium text-indigo-600 hover:text-indigo-800 transition duration-150 underline">
-                    <i class="fas fa-eye mr-1"></i> View Public Profile
-                </a>
+        <!-- Provider Details -->
+        <section class="mb-6">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-3 border-b pb-2">About <%= provider.name %></h2>
+            <div class="bio-text bg-gray-50 p-4 rounded-lg shadow-sm">
+                <p><%= provider.description || 'This provider has not yet added a detailed biography.' %></p>
             </div>
-        </div>
+        </section>
 
-        <!-- Stats and Description -->
-        <div class="lg:col-span-2 space-y-8">
-            <!-- Statistics -->
-            <div class="grid grid-cols-1 sm:grid-cols-3 gap-4">
-                <div class="bg-indigo-100 p-4 rounded-xl shadow-lg text-center transform hover:scale-105 transition duration-300">
-                    <p class="text-4xl font-bold text-indigo-800"><%= totalReviews %></p>
-                    <p class="text-sm font-medium text-indigo-600 mt-1">Total Reviews</p>
-                </div>
-                <div class="bg-yellow-100 p-4 rounded-xl shadow-lg text-center transform hover:scale-105 transition duration-300">
-                    <p class="text-4xl font-bold text-yellow-800"><%= averageRating.toFixed(1) %></p>
-                    <p class="text-sm font-medium text-yellow-600 mt-1 flex justify-center items-center">
-                        <i class="fas fa-star mr-1"></i> Average Rating
-                    </p>
-                </div>
-                <div class="bg-purple-100 p-4 rounded-xl shadow-lg text-center transform hover:scale-105 transition duration-300">
-                    <p class="text-4xl font-bold text-purple-800"><%= inquiries.length %></p>
-                    <p class="text-sm font-medium text-purple-600 mt-1">New Inquiries</p>
-                </div>
-            </div>
-
-            <!-- Description -->
-            <div class="bg-gray-50 p-6 rounded-xl shadow-inner border border-gray-200 h-full">
-                <h3 class="text-xl font-bold text-gray-800 mb-3 flex items-center">
-                    <i class="fas fa-clipboard-list mr-2 text-indigo-500"></i> My Service Description
+        <section class="details-contact grid md:grid-cols-2 gap-6 mb-6">
+            <div class="p-4 bg-white rounded-lg border">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2 flex items-center">
+                    <i class="fas fa-phone-alt text-indigo-600 mr-2"></i> Contact Information
                 </h3>
-                <p class="text-gray-700 whitespace-pre-wrap leading-relaxed italic text-sm">
-                    <%= provider.description || 'You have not added a detailed description yet. Click "Edit Profile" above to add one and attract more customers!' %>
-                </p>
+                <p class="text-gray-600 font-medium">Phone/Email:</p>
+                <p class="text-xl text-gray-800"><%= provider.contactInfo || 'Contact details available upon inquiry.' %></p>
             </div>
-        </div>
-    </div>
-    
-    <!-- REVIEWS and INQUIRIES Section -->
-    <div class="mt-12 pt-8 border-t border-gray-200">
-        <h2 class="text-3xl font-bold text-indigo-800 mb-6 flex items-center"><i class="fas fa-chart-line mr-2"></i> Customer Activity</h2>
-        
-        <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
+            <div class="p-4 bg-white rounded-lg border">
+                <h3 class="text-lg font-semibold text-gray-700 mb-2 flex items-center">
+                    <i class="fas fa-envelope text-indigo-600 mr-2"></i> Primary Email
+                </h3>
+                <p class="text-gray-600 font-medium">For Booking/Inquiries:</p>
+                <p class="text-xl text-gray-800"><%= provider.email %></p>
+            </div>
+        </section>
+
+
+        <!-- Review/Inquiry Form -->
+        <section class="review-section">
+            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Leave Feedback or Make an Inquiry</h2>
             
-            <!-- 1. Reviews (Rated) -->
-            <div>
-                <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center text-yellow-700">
-                    <i class="fas fa-thumbs-up mr-2"></i> Customer Reviews
-                </h3>
-                
-                <% if (reviews.length > 0) { %>
-                    <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
-                        <% reviews.forEach(review => { %>
-                            <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-yellow-500 transform hover:shadow-lg transition duration-300">
-                                <div class="flex justify-between items-start mb-2">
-                                    <h4 class="font-bold text-gray-900"><%= review.visitorName %></h4>
-                                    <small class="text-gray-500"><%= new Date(review.date).toLocaleDateString() %></small>
-                                </div>
-                                <div class="mb-2"><%- renderStars(review.rating) %></div>
-                                <p class="text-gray-700 italic text-sm">"<%= review.comment %>"</p>
-                            </div>
-                        <% }); %>
+            <% if (reviewMessage) { %>
+                <div class="bg-green-100 text-green-700 p-4 rounded-lg mb-4 font-semibold"><i class="fas fa-check-circle mr-2"></i> <%= reviewMessage %></div>
+            <% } %>
+            <% if (reviewError) { %>
+                <div class="bg-red-100 text-red-700 p-4 rounded-lg mb-4 font-semibold"><i class="fas fa-exclamation-triangle mr-2"></i> <%= reviewError %></div>
+            <% } %>
+
+            <div class="review-form-card">
+                <form action="/provider/review/<%= provider._id %>" method="POST">
+                    
+                    <div class="form-group mb-4">
+                        <label for="visitorName">Your Name (Required)</label>
+                        <input type="text" id="visitorName" name="visitorName" required placeholder="John Doe">
                     </div>
-                <% } else { %>
-                    <p class="p-4 bg-gray-100 rounded-xl text-gray-600 italic border border-gray-200">No rated reviews yet. Your reviews will appear here!</p>
-                <% } %>
-            </div>
 
-            <!-- 2. Inquiries (Unrated) -->
-            <div>
-                <h3 class="text-2xl font-semibold text-gray-800 mb-4 border-b pb-2 flex items-center text-purple-700">
-                    <i class="fas fa-comment-dots mr-2"></i> New Service Inquiries
-                </h3>
-
-                <% if (inquiries.length > 0) { %>
-                    <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
-                        <% inquiries.forEach(inquiry => { %>
-                            <div class="bg-white p-4 rounded-lg shadow-md border-l-4 border-purple-500 transform hover:shadow-lg transition duration-300">
-                                <div class="flex justify-between items-start mb-2">
-                                    <h4 class="font-bold text-gray-900"><%= inquiry.visitorName %></h4>
-                                    <small class="text-gray-500"><%= new Date(inquiry.date).toLocaleDateString() %></small>
-                                </div>
-                                <p class="text-gray-700 text-sm leading-snug">
-                                    <span class="font-medium text-purple-600">Message:</span> <%= inquiry.comment %>
-                                </p>
-                            </div>
-                        <% }); %>
+                    <div class="form-group mb-4">
+                        <label>Your Rating (1-5 stars for review, 0/None for inquiry)</label>
+                        <div class="star-rating mt-2">
+                            <!-- 5 star -->
+                            <input type="radio" id="star5" name="rating" value="5" class="rating-input" />
+                            <label for="star5" title="Excellent (5 stars)"><i class="fas fa-star"></i></label>
+                            
+                            <!-- 4 star -->
+                            <input type="radio" id="star4" name="rating" value="4" class="rating-input" />
+                            <label for="star4" title="Good (4 stars)"><i class="fas fa-star"></i></label>
+                            
+                            <!-- 3 star -->
+                            <input type="radio" id="star3" name="rating" value="3" class="rating-input" />
+                            <label for="star3" title="Average (3 stars)"><i class="fas fa-star"></i></label>
+                            
+                            <!-- 2 star -->
+                            <input type="radio" id="star2" name="rating" value="2" class="rating-input" />
+                            <label for="star2" title="Poor (2 stars)"><i class="fas fa-star"></i></label>
+                            
+                            <!-- 1 star -->
+                            <input type="radio" id="star1" name="rating" value="1" class="rating-input" />
+                            <label for="star1" title="Very Poor (1 star)"><i class="fas fa-star"></i></label>
+                            
+                            <!-- 0 star / Inquiry (Default) -->
+                            <input type="radio" id="star0" name="rating" value="0" class="rating-input" checked />
+                            <label for="star0" title="Inquiry Only (No Rating)" class="text-gray-400 text-sm italic ml-2">No Rating (Inquiry)</label>
+                        </div>
                     </div>
-                <% } else { %>
-                    <p class="p-4 bg-gray-100 rounded-xl text-gray-600 italic border border-gray-200">No new inquiries.</p>
-                <% } %>
+
+                    <div class="form-group mb-6">
+                        <label for="comment">Your Comment/Inquiry Details (Required)</label>
+                        <textarea id="comment" name="comment" rows="4" required placeholder="I am interested in your services for..."></textarea>
+                    </div>
+
+                    <button type="submit" class="btn-submit w-full">Submit Feedback / Inquiry</button>
+                    <p class="text-center text-sm text-gray-500 mt-3">0 stars submits a private inquiry. 1-5 stars submits a public review.</p>
+                </form>
             </div>
+        </section>
 
-        </div>
-    </div>
 
-    <!-- Logout Link -->
-    <div class="mt-10 pt-6 border-t border-gray-200 flex justify-center">
-        <a href="/logout" class="text-lg font-medium text-red-600 hover:text-red-800 transition duration-300 p-2 rounded-lg hover:bg-red-50">
-            <i class="fas fa-sign-out-alt mr-1"></i> Log Out
+        <!-- Existing Reviews Section -->
+        <section class="review-section">
+            <h3 class="text-2xl font-semibold text-gray-700 mb-4">
+                Public Reviews (<%= provider.reviewCount %>)
+            </h3>
+            
+            <% 
+                const publicReviews = provider.reviews.filter(r => r.rating >= 1 && r.rating <= 5).reverse(); // Only show rated reviews, newest first
+            %>
+
+            <% if (publicReviews.length > 0) { %>
+                <div class="space-y-4">
+                    <% publicReviews.forEach(review => { %>
+                        <div class="review-item border border-gray-200">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-gray-800"><i class="fas fa-user-circle mr-1 text-indigo-500"></i> <%= review.visitorName %></span>
+                                <span class="text-sm text-gray-500"><%= new Date(review.date).toLocaleDateString() %></span>
+                            </div>
+                            <div class="review-rating text-lg mb-2">
+                                <% for(let i = 0; i < 5; i++) { %>
+                                    <i class="<%= i < review.rating ? 'fas fa-star' : 'far fa-star' %>"></i>
+                                <% } %>
+                            </div>
+                            <p class="text-gray-700 leading-relaxed"><%= review.comment %></p>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="text-center p-6 bg-yellow-50 text-yellow-800 border-yellow-200 border rounded-lg">
+                    <p class="font-semibold"><i class="fas fa-info-circle mr-2"></i> No public reviews posted yet.</p>
+                    <p class="text-sm mt-1">Be the first to leave a review!</p>
+                </div>
+            <% } %>
+
+        </section>
+        
+        <a href="/" class="back-to-search bg-gray-500 hover:bg-gray-600 mt-6 flex items-center justify-center">
+            <i class="fas fa-arrow-left mr-2"></i> Back to Search Results
         </a>
+
     </div>
 </div>
 
-</div>
-
-<%- include('./partials/footer') %>
+<%- include('./partials/foot') %>
