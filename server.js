@@ -54,6 +54,7 @@ const User = mongoose.model('User', UserSchema);
 
 // === 1. INITIALIZE APP & PORT ===
 const app = express(); 
+// Ensure PORT is correctly read from environment or defaults to 3000
 const PORT = process.env.PORT || 3000; 
 
 // Base categories to ensure they are always available in search filters
@@ -245,7 +246,7 @@ app.get('/provider/profile', ensureProviderAuth, async (req, res) => {
             return res.redirect('/');
         }
         
-        // Renders the editable profile view, which was causing the error
+        // Renders the editable profile view
         res.render('provider-profile', { 
             title: 'Edit Your Profile', 
             provider: provider.toObject() // Pass the full provider object
@@ -475,6 +476,9 @@ app.use((req, res) => {
 });
 
 
-// === 7. START THE SERVER ===
-// app.listen(PORT, () => console.log(`Server running on port ${PORT}`)); 
-module.exports = app;
+// === 7. START THE SERVER (FIXED) ===
+// Render and similar platforms require the app to listen on the PORT environment variable.
+app.listen(PORT, () => {
+    console.log(`✅ Server running and listening on port ${PORT}`);
+    console.log('Environment:', process.env.NODE_ENV || 'development');
+});
