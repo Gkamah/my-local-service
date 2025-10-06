@@ -1,306 +1,151 @@
 <%- include('./partials/head', { title: title }) %>
 
 <style>
-    /* Custom Tailwind/CSS overrides for aesthetic appeal */
-    body {
-        background-color: #f7f9fc;
-        font-family: 'Inter', sans-serif;
-    }
-    .profile-view-container {
+    /* Styling for the Profile Editor */
+    .editor-container {
         max-width: 800px;
         margin: 3rem auto;
         padding: 0 1rem;
     }
-    .profile-card {
-        background: #fff;
-        border-radius: 12px;
-        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.05);
-        padding: 2rem;
-        transition: transform 0.3s ease;
-    }
-    .profile-header {
-        display: flex;
-        align-items: center;
-        margin-bottom: 2rem;
-        border-bottom: 1px solid #eee;
-        padding-bottom: 1.5rem;
-    }
-    .profile-photo-lg {
-        width: 100px;
-        height: 100px;
+    .profile-photo-preview {
+        width: 150px;
+        height: 150px;
         border-radius: 50%;
         background-color: #434375;
         display: flex;
         justify-content: center;
         align-items: center;
-        font-size: 40px;
+        font-size: 50px;
         color: white;
-        margin-right: 1.5rem;
+        margin: 1rem auto;
         overflow: hidden;
-        border: 4px solid #fff;
+        border: 5px solid #fff;
         box-shadow: 0 0 0 2px #434375;
-    }
-    .profile-photo-lg img {
         object-fit: cover;
     }
-    .rating-badge {
-        background-color: #4CAF50; /* Green color for rating */
-        color: white;
-        padding: 0.25rem 0.6rem;
-        border-radius: 9999px;
-        font-weight: 700;
-        font-size: 0.9rem;
-        display: inline-flex;
-        align-items: center;
-        margin-left: 0.75rem;
-        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
-    }
-    .rating-badge i {
-        margin-right: 0.25rem;
-        font-size: 0.8rem;
-    }
-    .review-section {
-        margin-top: 2rem;
-        padding-top: 1.5rem;
-        border-top: 1px solid #eee;
-    }
-    .review-item {
-        background-color: #f0f4f8;
-        padding: 1rem;
-        border-radius: 8px;
-        margin-bottom: 1rem;
-    }
-    .review-rating {
-        color: #ffc107; /* Star color */
-    }
-    .review-form-card {
-        background-color: #ffffff;
-        padding: 2rem;
-        border-radius: 12px;
-        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.08);
-        margin-top: 2rem;
-        border-top: 5px solid #434375;
-    }
-    .form-group label {
-        font-weight: 600;
-        color: #333;
-    }
-    .form-group input, .form-group textarea, .form-group select {
-        border-radius: 6px;
-        border: 1px solid #ccc;
-        padding: 0.75rem;
+    .profile-photo-preview img {
         width: 100%;
-        margin-top: 0.5rem;
-        transition: border-color 0.3s;
+        height: 100%;
+        object-fit: cover;
     }
-    .form-group input:focus, .form-group textarea:focus, .form-group select:focus {
-        border-color: #434375;
-        box-shadow: 0 0 0 3px rgba(67, 67, 117, 0.2);
-        outline: none;
-    }
-    .btn-submit {
-        background-color: #434375;
-        color: white;
-        font-weight: 700;
-        padding: 0.75rem 1.5rem;
+    input[type="file"] {
+        display: block;
+        padding: 8px;
+        border: 1px solid #ccc;
         border-radius: 8px;
-        transition: background-color 0.3s;
+        width: 100%;
+        background-color: #f9f9f9;
     }
-    .btn-submit:hover {
-        background-color: #1a1a40;
-    }
-    .star-rating {
-        display: flex;
-        direction: rtl;
-        justify-content: start;
-        align-items: center;
-    }
-    .star-rating input[type="radio"] {
-        display: none;
-    }
-    .star-rating label {
-        cursor: pointer;
-        width: 30px;
-        height: 30px;
-        padding: 5px;
-        color: #ddd; /* Default grey star */
-        font-size: 25px;
-        transition: color 0.2s;
-    }
-    .star-rating label:hover,
-    .star-rating label:hover ~ label,
-    .star-rating input[type="radio"]:checked ~ label {
-        color: #ffc107; /* Yellow star */
-    }
-
 </style>
 
-<div class="container profile-view-container">
-    <div class="profile-card">
-        <header class="profile-header">
-            <div class="profile-photo-lg">
-                <% 
-                    // 1. Photo Logic: Check for Base64 URL and ensure correct prefix
-                    let finalProfileUrl = provider.profilePictureUrl;
-                    if (finalProfileUrl && finalProfileUrl.length > 0 && !finalProfileUrl.startsWith('data:image')) {
-                        // Assuming JPEG/PNG if it's a raw Base64 string (Crucial for rendering)
-                        finalProfileUrl = `data:image/jpeg;base64,${finalProfileUrl}`;
-                    }
-                %>
-                <% if (finalProfileUrl && finalProfileUrl.startsWith('data:image')) { %>
-                    <!-- Display the actual image, matching the container size -->
-                    <img 
-                        src="<%= finalProfileUrl %>" 
-                        alt="<%= provider.name %> Profile Picture" 
-                        style="width: 100%; height: 100%; border-radius: 50%; object-fit: cover;"
-                        onerror="this.onerror=null; this.src='https://placehold.co/100x100/434375/ffffff?text=P';"
-                    >
-                <% } else { %>
-                    <!-- Fallback: Font Awesome Icon (Original style) -->
-                    <i class="fas fa-user-circle"></i>
-                <% } %>
-            </div>
-            <div class="profile-info">
-                <h1 class="text-4xl font-bold text-gray-900 mb-1 flex items-center">
-                    <%= provider.name %>
-                    <% if (provider.averageRating !== 'N/A') { %>
-                        <span class="rating-badge">
-                            <i class="fas fa-star"></i> <%= provider.averageRating %>
-                        </span>
+<div class="container editor-container">
+    <div class="bg-white p-8 rounded-xl shadow-2xl border-t-8 border-primary">
+        <h1 class="text-3xl font-bold text-gray-900 mb-6">Edit Your Provider Profile</h1>
+        <p class="text-gray-600 mb-6">Update your professional details. This information will be displayed publicly.</p>
+
+        <form action="/provider/profile" method="POST" id="profileUpdateForm">
+            
+            <!-- Hidden Input for Base64 Image Data -->
+            <input type="hidden" name="profilePictureUrl" id="base64ImageOutput" value="<%= provider.profilePictureUrl || '' %>">
+
+            <!-- Profile Picture Section -->
+            <div class="mb-8 p-4 bg-indigo-50 rounded-lg text-center border border-indigo-200">
+                <h2 class="text-xl font-semibold mb-3 text-indigo-800">Profile Picture</h2>
+                
+                <div class="profile-photo-preview mx-auto" id="profileImagePreview">
+                    <% 
+                        let finalProfileUrl = provider.profilePictureUrl;
+                        if (finalProfileUrl && finalProfileUrl.length > 0 && !finalProfileUrl.startsWith('data:image')) {
+                            finalProfileUrl = `data:image/jpeg;base64,${finalProfileUrl}`;
+                        }
+                    %>
+                    <% if (finalProfileUrl && finalProfileUrl.startsWith('data:image')) { %>
+                        <img id="image-preview" src="<%= finalProfileUrl %>" alt="Current Profile Picture">
+                    <% } else { %>
+                        <i id="image-placeholder" class="fas fa-user-circle"></i>
                     <% } %>
-                </h1>
-                <p class="text-xl text-indigo-700 font-semibold mb-2"><%= provider.category %> Specialist</p>
-                <p class="text-gray-500"><i class="fas fa-users mr-1"></i> <%= provider.reviewCount %> total reviews</p>
-            </div>
-        </header>
-
-        <!-- Provider Details -->
-        <section class="mb-6">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-3 border-b pb-2">About <%= provider.name %></h2>
-            <div class="bio-text bg-gray-50 p-4 rounded-lg shadow-sm">
-                <p><%= provider.description || 'This provider has not yet added a detailed biography.' %></p>
-            </div>
-        </section>
-
-        <section class="details-contact grid md:grid-cols-2 gap-6 mb-6">
-            <div class="p-4 bg-white rounded-lg border">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2 flex items-center">
-                    <i class="fas fa-phone-alt text-indigo-600 mr-2"></i> Contact Information
-                </h3>
-                <p class="text-gray-600 font-medium">Phone/Email:</p>
-                <p class="text-xl text-gray-800"><%= provider.contactInfo || 'Contact details available upon inquiry.' %></p>
-            </div>
-            <div class="p-4 bg-white rounded-lg border">
-                <h3 class="text-lg font-semibold text-gray-700 mb-2 flex items-center">
-                    <i class="fas fa-envelope text-indigo-600 mr-2"></i> Primary Email
-                </h3>
-                <p class="text-gray-600 font-medium">For Booking/Inquiries:</p>
-                <p class="text-xl text-gray-800"><%= provider.email %></p>
-            </div>
-        </section>
-
-
-        <!-- Review/Inquiry Form -->
-        <section class="review-section">
-            <h2 class="text-2xl font-semibold text-gray-700 mb-4">Leave Feedback or Make an Inquiry</h2>
-            
-            <% if (reviewMessage) { %>
-                <div class="bg-green-100 text-green-700 p-4 rounded-lg mb-4 font-semibold"><i class="fas fa-check-circle mr-2"></i> <%= reviewMessage %></div>
-            <% } %>
-            <% if (reviewError) { %>
-                <div class="bg-red-100 text-red-700 p-4 rounded-lg mb-4 font-semibold"><i class="fas fa-exclamation-triangle mr-2"></i> <%= reviewError %></div>
-            <% } %>
-
-            <div class="review-form-card">
-                <form action="/provider/review/<%= provider._id %>" method="POST">
-                    
-                    <div class="form-group mb-4">
-                        <label for="visitorName">Your Name (Required)</label>
-                        <input type="text" id="visitorName" name="visitorName" required placeholder="John Doe">
-                    </div>
-
-                    <div class="form-group mb-4">
-                        <label>Your Rating (1-5 stars for review, 0/None for inquiry)</label>
-                        <div class="star-rating mt-2">
-                            <!-- 5 star -->
-                            <input type="radio" id="star5" name="rating" value="5" class="rating-input" />
-                            <label for="star5" title="Excellent (5 stars)"><i class="fas fa-star"></i></label>
-                            
-                            <!-- 4 star -->
-                            <input type="radio" id="star4" name="rating" value="4" class="rating-input" />
-                            <label for="star4" title="Good (4 stars)"><i class="fas fa-star"></i></label>
-                            
-                            <!-- 3 star -->
-                            <input type="radio" id="star3" name="rating" value="3" class="rating-input" />
-                            <label for="star3" title="Average (3 stars)"><i class="fas fa-star"></i></label>
-                            
-                            <!-- 2 star -->
-                            <input type="radio" id="star2" name="rating" value="2" class="rating-input" />
-                            <label for="star2" title="Poor (2 stars)"><i class="fas fa-star"></i></label>
-                            
-                            <!-- 1 star -->
-                            <input type="radio" id="star1" name="rating" value="1" class="rating-input" />
-                            <label for="star1" title="Very Poor (1 star)"><i class="fas fa-star"></i></label>
-                            
-                            <!-- 0 star / Inquiry (Default) -->
-                            <input type="radio" id="star0" name="rating" value="0" class="rating-input" checked />
-                            <label for="star0" title="Inquiry Only (No Rating)" class="text-gray-400 text-sm italic ml-2">No Rating (Inquiry)</label>
-                        </div>
-                    </div>
-
-                    <div class="form-group mb-6">
-                        <label for="comment">Your Comment/Inquiry Details (Required)</label>
-                        <textarea id="comment" name="comment" rows="4" required placeholder="I am interested in your services for..."></textarea>
-                    </div>
-
-                    <button type="submit" class="btn-submit w-full">Submit Feedback / Inquiry</button>
-                    <p class="text-center text-sm text-gray-500 mt-3">0 stars submits a private inquiry. 1-5 stars submits a public review.</p>
-                </form>
-            </div>
-        </section>
-
-
-        <!-- Existing Reviews Section -->
-        <section class="review-section">
-            <h3 class="text-2xl font-semibold text-gray-700 mb-4">
-                Public Reviews (<%= provider.reviewCount %>)
-            </h3>
-            
-            <% 
-                const publicReviews = provider.reviews.filter(r => r.rating >= 1 && r.rating <= 5).reverse(); // Only show rated reviews, newest first
-            %>
-
-            <% if (publicReviews.length > 0) { %>
-                <div class="space-y-4">
-                    <% publicReviews.forEach(review => { %>
-                        <div class="review-item border border-gray-200">
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="font-bold text-gray-800"><i class="fas fa-user-circle mr-1 text-indigo-500"></i> <%= review.visitorName %></span>
-                                <span class="text-sm text-gray-500"><%= new Date(review.date).toLocaleDateString() %></span>
-                            </div>
-                            <div class="review-rating text-lg mb-2">
-                                <% for(let i = 0; i < 5; i++) { %>
-                                    <i class="<%= i < review.rating ? 'fas fa-star' : 'far fa-star' %>"></i>
-                                <% } %>
-                            </div>
-                            <p class="text-gray-700 leading-relaxed"><%= review.comment %></p>
-                        </div>
-                    <% }) %>
                 </div>
-            <% } else { %>
-                <div class="text-center p-6 bg-yellow-50 text-yellow-800 border-yellow-200 border rounded-lg">
-                    <p class="font-semibold"><i class="fas fa-info-circle mr-2"></i> No public reviews posted yet.</p>
-                    <p class="text-sm mt-1">Be the first to leave a review!</p>
+
+                <input type="file" id="profilePictureInput" accept="image/*" class="mb-2">
+                <p class="text-sm text-gray-500">Max file size 5MB. Must be a square image for best results.</p>
+            </div>
+
+            <!-- Profile Details -->
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <div class="form-group">
+                    <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Business/Personal Name</label>
+                    <input type="text" id="name" name="name" value="<%= provider.name %>" required class="w-full border-gray-300 rounded-lg p-3">
                 </div>
-            <% } %>
+                <div class="form-group">
+                    <label for="category" class="block text-sm font-medium text-gray-700 mb-1">Service Category</label>
+                    <select id="category" name="category" required class="w-full border-gray-300 rounded-lg p-3">
+                        <% ['Driver', 'Plumbing', 'Electrician', 'Gardening', 'Cleaning'].forEach(cat => { %>
+                            <option value="<%= cat %>" <%= provider.category === cat ? 'selected' : '' %>><%= cat %></option>
+                        <% }) %>
+                    </select>
+                </div>
+            </div>
 
-        </section>
-        
-        <a href="/" class="back-to-search bg-gray-500 hover:bg-gray-600 mt-6 flex items-center justify-center">
-            <i class="fas fa-arrow-left mr-2"></i> Back to Search Results
-        </a>
+            <div class="form-group mb-6">
+                <label for="contactInfo" class="block text-sm font-medium text-gray-700 mb-1">Public Contact Info (Phone/Email)</label>
+                <input type="text" id="contactInfo" name="contactInfo" value="<%= provider.contactInfo || '' %>" class="w-full border-gray-300 rounded-lg p-3" placeholder="e.g., +1 555-1234 or booking@example.com">
+            </div>
 
+            <div class="form-group mb-8">
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Detailed Description/Bio</label>
+                <textarea id="description" name="description" rows="5" class="w-full border-gray-300 rounded-lg p-3" placeholder="Tell clients about your experience, certifications, and services offered."><%= provider.description || '' %></textarea>
+            </div>
+
+            <button type="submit" class="w-full btn-primary text-white font-bold py-3 px-4 rounded-lg shadow-lg hover:shadow-xl transition">
+                Save Profile Changes
+            </button>
+        </form>
+
+        <div class="mt-6 text-center">
+            <a href="/provider/dashboard" class="text-primary hover:underline font-semibold">
+                <i class="fas fa-arrow-left mr-1"></i> Back to Dashboard
+            </a>
+        </div>
     </div>
 </div>
+
+<script>
+    // === Profile Picture to Base64 Logic ===
+    const fileInput = document.getElementById('profilePictureInput');
+    const base64Output = document.getElementById('base64ImageOutput');
+    const imagePreviewContainer = document.getElementById('profileImagePreview');
+
+    fileInput.addEventListener('change', function(event) {
+        const file = event.target.files[0];
+        if (!file) return;
+
+        // Check file size (max 5MB)
+        if (file.size > 5 * 1024 * 1024) {
+            alert('File is too large. Maximum size is 5MB.');
+            fileInput.value = ''; // Clear the input
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = function(e) {
+            // The result includes the mime type (e.g., "data:image/jpeg;base64,...")
+            const base64Data = e.target.result; 
+            
+            // Store the full Base64 string in the hidden input
+            base64Output.value = base64Data; 
+            
+            // Update preview
+            imagePreviewContainer.innerHTML = `<img src="${base64Data}" alt="New Profile Picture">`;
+        };
+
+        reader.onerror = function(error) {
+            console.error('Error reading file:', error);
+            alert('Could not read the file.');
+        };
+
+        reader.readAsDataURL(file);
+    });
+</script>
 
 <%- include('./partials/foot') %>
