@@ -1,0 +1,122 @@
+<%- include('./partials/head', { title: title }) %>
+
+<style>
+    .dashboard-container {
+        max-width: 1000px;
+        margin: 3rem auto;
+        padding: 0 1rem;
+    }
+    .card {
+        background: #fff;
+        border-radius: 12px;
+        box-shadow: 0 5px 20px rgba(0, 0, 0, 0.05);
+        padding: 2rem;
+        margin-bottom: 2rem;
+    }
+    .profile-photo-sm {
+        width: 60px;
+        height: 60px;
+        border-radius: 50%;
+        background-color: #434375;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-size: 30px;
+        color: white;
+        margin-right: 1rem;
+        overflow: hidden;
+    }
+    .review-item {
+        border-left: 5px solid #434375;
+        padding: 1rem;
+        border-radius: 4px;
+        background-color: #f7f9fc;
+    }
+    .inquiry-item {
+        border-left: 5px solid #ffc107;
+        padding: 1rem;
+        border-radius: 4px;
+        background-color: #fffde7;
+    }
+</style>
+
+<div class="container dashboard-container">
+    <h1 class="text-4xl font-extrabold text-gray-900 mb-6">Your Provider Dashboard</h1>
+
+    <% if (message) { %>
+        <div class="bg-green-100 text-green-700 p-4 rounded-lg mb-4 font-semibold"><i class="fas fa-check-circle mr-2"></i> <%= message %></div>
+    <% } %>
+    <% if (error) { %>
+        <div class="bg-red-100 text-red-700 p-4 rounded-lg mb-4 font-semibold"><i class="fas fa-exclamation-triangle mr-2"></i> <%= error %></div>
+    <% } %>
+
+    <!-- Welcome Card -->
+    <div class="card flex items-center mb-8 bg-indigo-50 border-t-4 border-indigo-500">
+        <div class="profile-photo-sm">
+            <i class="fas fa-tools"></i>
+        </div>
+        <div>
+            <h2 class="text-2xl font-semibold text-gray-800">Welcome back, <%= userName %>!</h2>
+            <p class="text-indigo-600">Your current role: **<%= userRole %>** | Category: **<%= provider.category %>**</p>
+        </div>
+    </div>
+    
+    <div class="grid lg:grid-cols-3 gap-6">
+        <!-- Profile Management (Placeholder for future update) -->
+        <div class="lg:col-span-1 card h-full">
+            <h3 class="text-xl font-bold mb-4 text-gray-700 border-b pb-2">Profile Status</h3>
+            <p class="mb-4">Manage your contact info, description, and profile picture to attract more clients.</p>
+            <div class="space-y-3 text-sm text-gray-600">
+                <p><i class="fas fa-check-circle text-green-500 mr-2"></i> Profile Active</p>
+                <p><i class="fas fa-star text-yellow-500 mr-2"></i> Average Rating: **<%= provider.averageRating %>**</p>
+                <p><i class="fas fa-users text-blue-500 mr-2"></i> **<%= provider.reviewCount %>** Public Reviews</p>
+            </div>
+            <a href="/provider/profile" class="mt-4 inline-block bg-green-500 hover:bg-green-600 text-white font-semibold py-2 px-4 rounded-lg transition duration-200">View Public Profile</a>
+        </div>
+
+        <!-- Reviews & Inquiries -->
+        <div class="lg:col-span-2 card">
+            <h3 class="text-xl font-bold mb-4 text-gray-700 border-b pb-2">Client Feedback & Inquiries</h3>
+
+            <% 
+                // Sort all reviews (includes 0-rated inquiries) by date, newest first
+                const feedback = provider.reviews.sort((a, b) => new Date(b.date) - new Date(a.date));
+            %>
+
+            <% if (feedback.length > 0) { %>
+                <div class="space-y-4 max-h-96 overflow-y-auto pr-2">
+                    <% feedback.forEach(item => { %>
+                        <div class="<%= item.rating > 0 ? 'review-item' : 'inquiry-item' %> shadow-sm">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold text-gray-800"><%= item.visitorName %></span>
+                                <span class="text-sm text-gray-500"><%= new Date(item.date).toLocaleDateString() %></span>
+                            </div>
+                            
+                            <% if (item.rating > 0) { %>
+                                <!-- Public Review -->
+                                <div class="text-lg mb-1">
+                                    <span class="font-semibold text-green-700 mr-2">Review:</span>
+                                    <% for(let i = 0; i < 5; i++) { %>
+                                        <i class="fa-star <%= i < item.rating ? 'fas text-yellow-500' : 'far text-gray-300' %>"></i>
+                                    <% } %>
+                                </div>
+                            <% } else { %>
+                                <!-- Private Inquiry (Rating 0) -->
+                                <p class="font-semibold text-yellow-800 mb-1"><i class="fas fa-question-circle mr-1"></i> New Inquiry Received</p>
+                            <% } %>
+                            
+                            <p class="text-gray-700 italic">"<%= item.comment %>"</p>
+                        </div>
+                    <% }) %>
+                </div>
+            <% } else { %>
+                <div class="text-center p-6 bg-yellow-50 text-yellow-800 border-yellow-200 border rounded-lg">
+                    <p class="font-semibold"><i class="fas fa-info-circle mr-2"></i> No feedback or inquiries yet.</p>
+                    <p class="text-sm mt-1">Share your profile link to start getting business!</p>
+                </div>
+            <% } %>
+        </div>
+    </div>
+</div>
+
+<%- include('./partials/foot') %>
